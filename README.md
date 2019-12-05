@@ -1,6 +1,9 @@
 # Exptools
 A unified experiment deploy, logging, visualizatoin, comparsion tool (based on Tensorboard)
 
+# Dead
+It seems like [scared]{https://github.com/IDSIA/sacred} has already a series of good implementation.
+Although there is no feature in launching, it deserves further check.
 
 # Expected features
 ## Launching experiment
