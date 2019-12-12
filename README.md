@@ -43,7 +43,7 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
 - [ ] Different types of snapshot and resuming method
 - [ ] Logging multiple types of data and easy to view (Tensorboard protocol seems good)
 
-### Viewing after an experiment
+### Viewing after or during an experiment
 
 - [ ] Beautiful scalar curve (It should be great to export directly for paper/reports)
 - [ ] Compare between different variant
