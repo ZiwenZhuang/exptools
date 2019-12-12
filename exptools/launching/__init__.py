@@ -1,0 +1,3 @@
+''' Launching in different environment, forexample local, doodad, docker...
+    Runing on local machine is mostly copied from https://github.com/astooke/rlpyt
+'''
