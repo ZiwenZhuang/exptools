@@ -1,20 +1,31 @@
 
-
 from copy import deepcopy
 from collections import namedtuple
 import os.path as osp
 import json
 
+from exptools.collections import AttrDict
+
 VARIANT = "variant_config.json"
 
 VariantLevel = namedtuple("VariantLevel", ["keys", "values", "dir_names"])
-
+''' Use variant levels to descript a single combination you want to make.
+    NOTE: last two items should be the lists with the same length
+Parameters
+----------
+    "keys": a list of tuples. In each tuple, specifies the path to get acccess 
+        to the exact value via dict[key[0]][key[1]]...
+        Then, the length of the key should match the length of each item in values.
+    "values": a list of list of values you want to assign (in terms of each key-paths)
+    "dir_names": a list of names you want to addd in terms of this variant
+        (to make the log_dir more interpertable)
+'''
 
 def make_variants(*variant_levels):
     """ Given a list of variant_levels, do _cross_variants to generate
     a list of variant conbinations and the sub-directory that they should stay.
     """
-    variants, log_dirs = [dict()], [""]
+    variants, log_dirs = [AttrDict()], [""]
     for variant_level in variant_levels:
         variants, log_dirs = _cross_variants(variants, log_dirs, variant_level)
     return variants, log_dirs
@@ -32,7 +43,7 @@ def _cross_variants(prev_variants, prev_log_dirs, variant_level):
     log_dirs = list()
     for prev_variant, prev_log_dir in zip(prev_variants, prev_log_dirs):
         for vs, n in zip(values, dir_names):
-            variant = deepcopy(prev_variant)
+            variant = prev_variant.copy()
             log_dir = osp.join(prev_log_dir, n)
             if log_dir in log_dirs:
                 raise ValueError("Names must be unique.")
@@ -40,10 +51,10 @@ def _cross_variants(prev_variants, prev_log_dirs, variant_level):
                 current = variant
                 for k in key_path[:-1]:
                     if k not in current:
-                        current[k] = dict()
+                        current[k] = AttrDict()
                     current = current[k]
                 current[key_path[-1]] = v
-            variants.append(variant)
+            variants.append(AttrDict(variant))
             log_dirs.append(log_dir)
     return variants, log_dirs
 
@@ -51,7 +62,7 @@ def _cross_variants(prev_variants, prev_log_dirs, variant_level):
 def load_variant(log_dir):
     with open(osp.join(log_dir, VARIANT), "r") as f:
         variant = json.load(f)
-    return variant
+    return AttrDict(variant)
 
 
 def save_variant(variant, log_dir):

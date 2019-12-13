@@ -7,16 +7,16 @@ import json
 
 from exptools.logging import logger
 
-LOG_DIR = osp.abspath(osp.join(osp.dirname(__file__), '../../../data'))
-
+# NOTE: you have to run your python command at your project root directory \
+# (the parent directory of your 'data' directory)
+LOG_DIR = osp.abspath(osp.join(os.getcwd(), 'data'))
 
 def get_log_dir(experiment_name):
-    """ return string of "$RLPYT_PATH/data/local/$date/$experiment_name/"
+    """ return string of "${ProjectPATH}/data/local/$date/$experiment_name/"
     """
     yyyymmdd = datetime.datetime.today().strftime("%Y%m%d")
     log_dir = osp.join(LOG_DIR, "local", yyyymmdd, experiment_name)
     return log_dir
-
 
 @contextmanager
 def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none"):
