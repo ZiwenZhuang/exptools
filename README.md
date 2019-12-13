@@ -89,7 +89,7 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
     )
     ```
 
-        If any types of attribute not found error occurred, that should be missing from your launch file.
+    If any types of attribute not found error occurred, that should be missing from your launch file.
 
     b. Script running experiment
 
@@ -113,4 +113,4 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
             # ${affinity_code} ${log_dir} ${run_id} ${*args}
     ```
 
-        Then, you can do whatever you want, even with your own logging mechanism
+    Then, you can do whatever you want, even with your own logging mechanism
