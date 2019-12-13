@@ -97,12 +97,15 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
 
     ```python
     from exptools.launching.variant import load_variant
+    from exptools.launching.affinity import affinity_from_code
     import sys, os, json
     import ...
 
     def main(affinity_code, log_dir, run_id, *args):
         variant = load_variant(log_dir)
         # Then variant is a AttrDict, where you can access your configurations as attribute or dictionary.
+        gpu_idx = affinity_from_code(affinity_code)["cuda_idx"]
+        # This helps you know what GPU is recommand to you for this experiment
         ...
 
     if __name__ == "__main__":
