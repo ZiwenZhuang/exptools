@@ -54,9 +54,9 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
 
 ## Usage (API requirement)
 
-1. Launching
+### Launching
 
-    a. Script loading configuration and building variants
+1. Script loading configuration and building variants
 
     ```python
     from exptools.collections import AttrDict
@@ -92,9 +92,9 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
 
     If any types of attribute not found error occurred, that should be missing from your launch file.
 
-    b. Script running experiment
+2. Script running experiment
 
-        Your actual script that carries out the experiment should be in this following API.
+    Your actual script that carries out the experiment should be in this following API.
 
     ```python
     from exptools.launching.variant import load_variant
