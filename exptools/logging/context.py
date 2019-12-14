@@ -15,7 +15,7 @@ def get_log_dir(experiment_name):
     """ return string of "${ProjectPATH}/data/local/$date/$experiment_name/"
     """
     yyyymmdd = datetime.datetime.today().strftime("%Y%m%d")
-    log_dir = osp.join(LOG_DIR, "local", yyyymmdd, experiment_name)
+    log_dir = osp.join(LOG_DIR, "local", experiment_name, yyyymmdd)
     return log_dir
 
 @contextmanager
@@ -29,7 +29,7 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none")
     exp_dir = osp.abspath(log_dir)
     if LOG_DIR != osp.commonpath([exp_dir, LOG_DIR]):
         print(f"logger_context received log_dir outside of {LOG_DIR}: "
-            f"prepending by {LOG_DIR}/local/<yyyymmdd>/")
+            f"prepending by {LOG_DIR}/local/<experiment_name>/<yyyymmdd>/")
         exp_dir = get_log_dir(log_dir)
     tabular_log_file = osp.join(exp_dir, "progress.csv")
     text_log_file = osp.join(exp_dir, "debug.log")
