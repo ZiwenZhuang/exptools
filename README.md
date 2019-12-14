@@ -76,7 +76,8 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
     # Or try an automatic one, but results may vary:
     # affinity_code = quick_affinity_code(n_parallel=None, use_gpu=True)
 
-    # setup your configurations, or you can build via VariantLevel to make cross combination.
+    # setup your configurations, or you can build via VariantLevel to make cross 
+    # combination.
     variant = AttrDict(...)
 
     run_experiments(
@@ -103,7 +104,8 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
 
     def main(affinity_code, log_dir, run_id, *args):
         variant = load_variant(log_dir)
-        # Then variant is a AttrDict, where you can access your configurations as attribute or dictionary.
+        # Then variant is a AttrDict, where you can access your configurations
+        # as attribute or dictionary.
         gpu_idx = affinity_from_code(affinity_code)["cuda_idx"]
         # This helps you know what GPU is recommand to you for this experiment
         ...
@@ -114,3 +116,10 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
     ```
 
     Then, you can do whatever you want, even with your own logging mechanism
+
+### Tips
+
+- PyTorch:
+
+    * If you are setting a single GPU for your one experiment, use `torch.cuda.set_device(cuda_idx)`,
+    then you can use `device = torch.device("cuda")` to get device during the experiment
