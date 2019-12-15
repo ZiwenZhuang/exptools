@@ -5,7 +5,7 @@ setup(
     version= "0.1.0dev",
     packages= find_packages(),
     install_requires= [
-        "numpy", "sacred",
+        "numpy",
     ],
     license= "MIT License",
     long_dexcription= open("README.md").read(),

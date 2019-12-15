@@ -32,8 +32,8 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
 
 - [x] Automatic generate variants for all hyperparameters (goto `launching.variant.make_variants`)
 - [x] Save variant to a Json file (goto `launching.variant.save_variant`)
-- [x] Different method of running experiment in parallel (goto `launching.exp_launcher.run_experiments`)
-- [ ] Unified interface for entering an experiment (between this launcher and the experiment)
+- [ ] Different method of running experiment in parallel
+- [x] Unified interface for entering an experiment (between this launcher and the experiment) (goto `launching.exp_launcher.run_experiments`)
 
 ### Logging during an experiment
 

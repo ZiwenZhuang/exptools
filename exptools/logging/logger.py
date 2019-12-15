@@ -324,16 +324,16 @@ def pop_prefix():
     _prefix_str = ''.join(_prefixes)
 
 
-def save_itr_params(itr, params):
+def save_itr_params(itr, params, name= "", ext= ".pkl"):
     if _snapshot_dir:
         if _snapshot_mode == 'all':
-            file_name = osp.join(get_snapshot_dir(), 'itr_%d.pkl' % itr)
+            file_name = osp.join(get_snapshot_dir(), name+'itr_%d'+ext % itr)
         elif _snapshot_mode == 'last':
             # override previous params
-            file_name = osp.join(get_snapshot_dir(), 'params.pkl')
+            file_name = osp.join(get_snapshot_dir(), name+'params'+ext)
         elif _snapshot_mode == "gap":
             if itr == 0 or (itr + 1) % _snapshot_gap == 0:
-                file_name = osp.join(get_snapshot_dir(), 'itr_%d.pkl' % itr)
+                file_name = osp.join(get_snapshot_dir(), name+'itr_%d'+ext % itr)
             else:
                 return
         elif _snapshot_mode == 'none':
