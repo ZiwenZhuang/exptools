@@ -426,13 +426,13 @@ def save_itr_params(itr, params, name= "", ext= ".pkl"):
 #     with open(log_file, "w") as f:
 #         json.dump(variant_json, f, indent=2, sort_keys=True, cls=MyEncoder)
 
-class MyEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, type):
-            return {'$class': o.__module__ + "." + o.__name__}
-        elif isinstance(o, Enum):
-            return {'$enum': o.__module__ + "." + o.__class__.__name__ + '.' + o.name}
-        return json.JSONEncoder.default(self, o)
+# class MyEncoder(json.JSONEncoder):
+#     def default(self, o):
+#         if isinstance(o, type):
+#             return {'$class': o.__module__ + "." + o.__name__}
+#         elif isinstance(o, Enum):
+#             return {'$enum': o.__module__ + "." + o.__class__.__name__ + '.' + o.name}
+#         return json.JSONEncoder.default(self, o)
 
 def record_tabular_misc_stat(key, values, placement='back'):
     if placement == 'front':

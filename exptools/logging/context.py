@@ -5,6 +5,8 @@ import os
 import os.path as osp
 import json
 
+from tensorboard import summary
+
 from exptools.logging import logger
 
 # NOTE: you have to run your python command at your project root directory \
@@ -46,6 +48,9 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none")
     log_params["run_ID"] = run_ID
     with open(params_log_file, "w") as f:
         json.dump(log_params, f)
+
+    logger.set_tf_summary_dir(log_dir)
+    logger.set_tf_summary_writer(summary.FileWriter(logger.get_tf_summary_dir()))
 
     yield
 
