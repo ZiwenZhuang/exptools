@@ -32,25 +32,34 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
 
 - [x] Automatic generate variants for all hyperparameters (goto `launching.variant.make_variants`)
 - [x] Save variant to a Json file (goto `launching.variant.save_variant`)
-- [ ] Different method of running experiment in parallel
+- [x] Different method of running experiment in parallel (goto `launching.exp_launcher.run_experiments`)
+    * You can debug via debug option in `run_experiments` argument. And the function will select a experiment to run at random.
 - [x] Unified interface for entering an experiment (between this launcher and the experiment) (goto `launching.exp_launcher.run_experiments`)
 
 ### Logging during an experiment
 
-- [ ] Ubiquitous logger in every layer of the experiment code (accessing the same object)
-- [ ] Auto Prefix for logging title (python context manager should be good)
-- [ ] Customized iteration number when logging
-- [ ] Different types of snapshot and resuming method
-- [ ] Logging multiple types of data and easy to view (Tensorboard protocol seems good)
+- [x] Ubiquitous logger in every layer of the experiment code (accessing the same object)
+    (go to `logging.logger`)
+- [x] Auto Prefix for logging title (python context manager should be good)
+    (go to `logging.context.logger_context()` and `logging.logger.prefix()`)
+- [ ] Customized iteration number when logging 
+    It seems no longer needed because they usually log iteration number in the tabular.
+- [x] Different types of snapshot and resuming method (go to `logging.save_itr_params`)
+- [x] Logging multiple types of data and easy to view (Tensorboard protocol seems good)
+    Using viskit philosophy, I fix the comparing issue
 
 ### Viewing after or during an experiment
 
 - [ ] Beautiful scalar curve (It should be great to export directly for paper/reports)
-- [ ] Compare between different variant
+    Viskit is not beautiful enough, but will do.
+- [x] Compare between different variant
     * Automatically extract the difference between each experiment.
     * Require procotol of saving the variant.
-- [ ] Export CSV file for the scalar data
+    (go to `viewing`, I copied code from [viskit](https://github.com/vitchyr/viskit) and fixing the variant file name problem)
+    NOTE: viewing is now in-seperatable from logging.
+- [x] Export CSV file for the scalar data
     * It should export every frame, not like Tensorboard who downsampled the curve longer than 1k frames.
+    (progress.csv in your log_dir is what you need)
 
 ## Usage (API requirement)
 

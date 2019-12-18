@@ -5,13 +5,14 @@ import os
 import os.path as osp
 import json
 
-from tensorboard import summary
-
 from exptools.logging import logger
 
 # NOTE: you have to run your python command at your project root directory \
 # (the parent directory of your 'data' directory)
 LOG_DIR = osp.abspath(osp.join(os.getcwd(), 'data'))
+TABULAR_FILE = "progress.csv"
+TEXT_LOG_FILE = "debug.log"
+PARAMS_LOG_FILE = "params.json"
 
 def get_log_dir(experiment_name):
     """ return string of "${ProjectPATH}/data/local/$date/$experiment_name/"
@@ -33,9 +34,9 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none")
         print(f"logger_context received log_dir outside of {LOG_DIR}: "
             f"prepending by {LOG_DIR}/local/<experiment_name>/<yyyymmdd>/")
         exp_dir = get_log_dir(log_dir)
-    tabular_log_file = osp.join(exp_dir, "progress.csv")
-    text_log_file = osp.join(exp_dir, "debug.log")
-    params_log_file = osp.join(exp_dir, "params.json")
+    tabular_log_file = osp.join(exp_dir, TABULAR_FILE)
+    text_log_file = osp.join(exp_dir, TEXT_LOG_FILE)
+    params_log_file = osp.join(exp_dir, PARAMS_LOG_FILE)
 
     logger.set_snapshot_dir(exp_dir)
     logger.add_text_output(text_log_file)
@@ -48,9 +49,6 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none")
     log_params["run_ID"] = run_ID
     with open(params_log_file, "w") as f:
         json.dump(log_params, f)
-
-    logger.set_tf_summary_dir(log_dir)
-    logger.set_tf_summary_writer(summary.FileWriter(logger.get_tf_summary_dir()))
 
     yield
 
@@ -67,9 +65,9 @@ def add_exp_param(param_name, param_val, exp_dir=None, overwrite=False):
         exp_dir = os.getcwd()
     # exp_folders = get_immediate_subdirectories(exp_dir)
     for sub_dir in os.walk(exp_dir):
-        if "params.json" in sub_dir[2]:
+        if PARAMS_LOG_FILE in sub_dir[2]:
             update_param = True
-            params_f = osp.join(sub_dir[0], "params.json")
+            params_f = osp.join(sub_dir[0], PARAMS_LOG_FILE)
             with open(params_f, "r") as f:
                 params = json.load(f)
                 if param_name in params:

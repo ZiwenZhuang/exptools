@@ -21,6 +21,8 @@ color2num = dict(
 
 
 def colorize(string, color, bold=False, highlight=False):
+    ''' Set color to the string that you are coing to print
+    '''
     attr = []
     num = color2num[color]
     if highlight:
