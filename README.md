@@ -120,6 +120,7 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
         ...
 
     if __name__ == "__main__":
+        # The main function name has to be "main" or "build_and_train" (conpatible with rlpyt)
         main(*sys.argv[1:]) # the argument will be put as follows:
             # ${affinity_code} ${log_dir} ${run_id} ${*args}
     ```

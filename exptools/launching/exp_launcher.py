@@ -65,7 +65,10 @@ def launch_experiment(script, run_slot, affinity_code, log_dir, variant, run_ID,
         module = importlib.util.module_from_spec(module_spec)
         module_spec.loader.exec_module(module)
         # call experiment
-        module.main(*call_command[2:]) # feed the command start from after the script name
+        if hasattr(module, "main"):
+            module.main(*call_command[2:]) # feed the command start from after the script name
+        elif hasattr(module, "build_and_train"):
+            module.build_and_train(*call_command[2:])
     return p
 
 
