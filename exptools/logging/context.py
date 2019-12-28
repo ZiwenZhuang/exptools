@@ -24,7 +24,8 @@ def get_log_dir(experiment_name):
 @contextmanager
 def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none"):
     """ setup the context for one experiment with these parameters.
-        And save experiment parameters through 'log_params' as you need.
+        And save experiment parameters through 'log_params' as you need. \\
+        NOTE: This will look for `data` folder under the directory you run python.
     """
     logger.set_snapshot_mode(snapshot_mode)
     logger.set_log_tabular_only(False)

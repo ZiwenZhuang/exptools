@@ -16,6 +16,9 @@ import json
 # import pickle
 # import base64
 import torch
+import threading
+
+mp_lock = threading.Lock()
 
 _prefixes = []
 _prefix_str = ''
@@ -233,6 +236,13 @@ def tabular_prefix(key):
     yield
     pop_tabular_prefix()
 
+
+@contextmanager
+def lock():
+    """ interface for running logger in multi-threading/processing way """
+    mp_lock.acquire()
+    yield
+    mp_lock.release()
 
 class TerminalTablePrinter:
     def __init__(self):
