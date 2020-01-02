@@ -8,6 +8,7 @@ setup(
         "numpy",
         "plotly==4.0.0", 
         "flask==1.0.2"
+        "psutil",
     ],
     license= "MIT License",
     long_dexcription= open("README.md").read(),

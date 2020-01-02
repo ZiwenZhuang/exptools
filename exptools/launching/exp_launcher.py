@@ -69,6 +69,7 @@ def launch_experiment(script, run_slot, affinity_code, log_dir, variant, run_ID,
             module.main(*call_command[2:]) # feed the command start from after the script name
         elif hasattr(module, "build_and_train"):
             module.build_and_train(*call_command[2:])
+        p = None
     return p
 
 
