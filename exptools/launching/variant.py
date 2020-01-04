@@ -67,7 +67,7 @@ def load_variant(log_dir):
 
 def save_variant(variant, log_dir):
     with open(osp.join(log_dir, VARIANT), "w") as f:
-        json.dump(variant, f)
+        json.dump(variant, f, indent= 4)
 
 
 def update_config(default, variant):
