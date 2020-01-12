@@ -6,6 +6,7 @@ setup(
     packages= find_packages(),
     install_requires= [
         "numpy",
+        "matplotlib",
         "plotly==4.0.0", 
         "flask==1.0.2",
         "psutil",
