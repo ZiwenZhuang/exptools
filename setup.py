@@ -7,6 +7,7 @@ setup(
     install_requires= [
         "numpy",
         "matplotlib",
+        "cython",
         "plotly==4.0.0", 
         "flask==1.0.2",
         "psutil",

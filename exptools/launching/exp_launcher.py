@@ -1,5 +1,6 @@
 
 import subprocess
+import datetime
 import time
 import os
 import os.path as osp
@@ -16,18 +17,24 @@ def log_exps_tree(exp_dir, log_dirs, runs_per_setting):
     into $exp_dir/experiments_tree.txt
     """
     os.makedirs(exp_dir, exist_ok=True)
-    with open(osp.join(exp_dir, "experiments_tree.txt"), "w") as f:
-        f.write(f"Experiment manager process ID: {os.getpid()}.\n")
-        f.write("Number of settings (experiments) to run: "
+    with open(osp.join(exp_dir, "experiments_tree.txt"), "a") as f:
+        now = datetime.datetime.now()  # dateutil.tz.tzlocal())
+        timestamp = now.strftime('%Y-%m-%d %H:%M:%S.%f %Z')
+        timestamp = f"{timestamp} | "
+        f.write(f"{timestamp}Experiment manager process ID: {os.getpid()}.\n")
+        f.write(f"{timestamp}Number of settings (experiments) to run: "
             f"{len(log_dirs)}  ({runs_per_setting * len(log_dirs)}).\n\n")
-        [f.write(log_dir + "\n") for log_dir in log_dirs]
+        [f.write(timestamp + log_dir + "\n") for log_dir in log_dirs]
 
 
 def log_num_launched(exp_dir, n, total):
     """ write the total number of experiment launched into $exp_dir/num_launched.txt
     """
-    with open(osp.join(exp_dir, "num_launched.txt"), "w") as f:
-        f.write(f"Experiments launched so far: {n} out of {total}.\n")
+    with open(osp.join(exp_dir, "num_launched.txt"), "a") as f:
+        now = datetime.datetime.now()  # dateutil.tz.tzlocal())
+        timestamp = now.strftime('%Y-%m-%d %H:%M:%S.%f %Z')
+        timestamp = f"{timestamp} | "
+        f.write(f"{timestamp}Experiments launched so far: {n} out of {total}.\n")
 
 
 def launch_experiment(script, run_slot, affinity_code, log_dir, variant, run_ID, args, new_process: bool= True):
