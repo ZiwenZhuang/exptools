@@ -14,7 +14,7 @@ default_config = dict(
 )
 
 def main(args):
-    experiment_title = "pearl_reproduction"
+    experiment_title = "demo_experiment"
     affinity_code = quick_affinity_code(n_parallel=8)
     # NOTE: you can also use encode_affinity to specifying how to distribute each
     # experiment in your computing nodes.
