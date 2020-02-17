@@ -18,6 +18,16 @@ import json
 import torch
 import threading
 
+_tf_available = False
+_tf_dump_step = 0 # to synchronize with dump_tabular()
+try:
+    import tensorflow as tf
+    import tensorboard as tfb
+except ImportError as e:
+    pass
+else:
+    _tf_available = True
+
 mp_lock = threading.Lock()
 
 _prefixes = []
@@ -43,9 +53,6 @@ _snapshot_gap = 1
 _log_tabular_only = False
 _header_printed = False
 _disable_prefix = False
-
-_tf_summary_dir = None
-_tf_summary_writer = None
 
 _disabled = False
 _tabular_disabled = False
@@ -130,24 +137,6 @@ def get_snapshot_dir():
     return _snapshot_dir
 
 
-def set_tf_summary_dir(dir_name):
-    global _tf_summary_dir
-    _tf_summary_dir = dir_name
-
-
-def get_tf_summary_dir():
-    return _tf_summary_dir
-
-
-def set_tf_summary_writer(writer_name):
-    global _tf_summary_writer
-    _tf_summary_writer = writer_name
-
-
-def get_tf_summary_writer():
-    return _tf_summary_writer
-
-
 def get_snapshot_mode():
     return _snapshot_mode
 
@@ -182,6 +171,19 @@ def get_disable_prefix():
     return _disable_prefix
 
 
+def tf_scalar_summary(name, data, step):
+    if _tf_available:
+        """Log a scalar variable."""
+        tf.summary.scalar(name=name, data=data, step= step)
+
+def tf_text_summary(name, data, step=None):
+    ''' data has to be a string
+        no need for `step` data
+    '''
+    if _tf_available:
+        tf.summary.text(name=name, data=data, step= step)
+
+
 def log(s, with_prefix=True, with_timestamp=True, color=None):
     if not _disabled:
         out = s
@@ -200,6 +202,8 @@ def log(s, with_prefix=True, with_timestamp=True, color=None):
                 fd.write(out + '\n')
                 fd.flush()
             sys.stdout.flush()
+        # add tf text summary if available
+        tf_text_summary("log", out)
 
 
 def record_tabular(key, val, *args, **kwargs):
@@ -207,6 +211,8 @@ def record_tabular(key, val, *args, **kwargs):
     '''
     # if not _disabled and not _tabular_disabled:
     _tabular.append((_tabular_prefix_str + str(key), str(val)))
+    # add tf scalar summary if available
+    tf_scalar_summary(key, val, _tf_dump_step)
 
 
 def push_tabular_prefix(key):
@@ -277,6 +283,8 @@ def dump_tabular(*args, **kwargs):
     NOTE: *args, **kwargs options epscifying for 'log' function.
         And 'log' function are used to print tabular.
     '''
+    global _tf_dump_step
+    _tf_dump_step += 1
     if not _disabled:  # and not _tabular_disabled:
         wh = kwargs.pop("write_header", None)
         if len(_tabular) > 0:
@@ -325,6 +333,8 @@ def dump_tabular(*args, **kwargs):
                             tabular_dict[key] = np.nan
                     writer.writerow(tabular_dict)
                     tabular_fd.flush()
+                    if _tf_available:
+                        tf.summary.flush()
             del _tabular[:]
 
 
