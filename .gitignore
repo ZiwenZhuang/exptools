@@ -106,3 +106,6 @@ venv.bak/
 # vscode and visual studio
 .vscode
 .vs
+
+# data folder generated from the code by default
+data/

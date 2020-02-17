@@ -232,7 +232,7 @@ def build_gpu_affinity(slt, gpu, cpu, cxg=1, cpw=1, hto=None, res=0, skt=1,
         alt=0, saf=1):
     """Divides CPUs evenly among GPUs."""
     n_ctx = gpu * cxg
-    assert slt < n_ctx
+    assert slt <= n_ctx
     assert cpu % n_ctx == 0
     cpr = cpu // n_ctx
     if cxg > 1:
