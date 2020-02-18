@@ -26,6 +26,10 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
     pip install -e .
     ```
 
+- You can also install with tensorflow/tensorboard installed in your python enrironment. And you can utilize tensorboard feature.
+    
+    For futher information, please see `setup.py`
+
 ## Expected features (and where to find it if it is implemented)
 
 ### Launching experiments
@@ -50,7 +54,7 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
 
 ### Viewing after or during an experiment
 
-- [ ] Beautiful scalar curve (It should be great to export directly for paper/reports)
+- [x] Beautiful scalar curve (It should be great to export directly for paper/reports)
     Viskit is not beautiful enough, but will do.
 - [x] Compare between different variant
     * Automatically extract the difference between each experiment.
@@ -62,6 +66,8 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
     (progress.csv in your log_dir is what you need)
 
 ## Usage (API requirement)
+
+You can see demo from `launch_demo.py` and `demo.py`
 
 ### Launching
 

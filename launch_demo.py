@@ -27,7 +27,7 @@ def main(args):
         ["two",],
     ]
     dir_names = ["{}".format(*v) for v in values]
-    keys = [("optionA", "choiceB")] # each entry in the list is the string path to your config
+    keys = [("optionA", "choiceA")] # each entry in the list is the string path to your config
     variant_levels.append(VariantLevel(keys, values, dir_names))
 
     values = [
