@@ -13,7 +13,7 @@ basic_install_requires = [
 ver_num = "0.1.0"
 
 # NOTE: the version is not check here
-tf_requires = ["tensorflow>=2.1.0"]
+tf_requires = ["tensorflow-cpu>=2.1.0"]
 tf_gpu_requires = ["tensorflow-gpu>=2.1.0"]
 tfb_requires = ["tensorboard>=2.1.0"]
 

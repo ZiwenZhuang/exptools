@@ -7,7 +7,7 @@ import json
 from copy import deepcopy
 
 from exptools.logging import logger
-from exptools.launching.variant import flatten_variant
+from exptools.launching.variant import flatten_variant4hparams
 if logger._tf_available:
     import tensorflow as tf
     from tensorboard.plugins.hparams import api as hp
@@ -57,7 +57,7 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none")
         json.dump(log_params, f)
     if logger._tf_available:
         with tf.summary.create_file_writer(exp_dir).as_default():
-            hp.hparams(flatten_variant(deepcopy(log_params)))
+            hp.hparams(flatten_variant4hparams(deepcopy(log_params)))
             yield
     else:
         yield

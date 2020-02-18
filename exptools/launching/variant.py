@@ -3,6 +3,7 @@ from copy import deepcopy
 from collections import namedtuple
 import os.path as osp
 import json
+import numbers
 
 from exptools.collections import AttrDict
 
@@ -83,7 +84,7 @@ def update_config(default, variant):
         new[k] = update_config(new[k], v) if isinstance(v, dict) else v
     return new
 
-def flatten_variant(variant: dict):
+def flatten_variant4hparams(variant: dict):
     """ Make the nested dictionary into a single-level dictionary
         NOTE/WARNING: the input variable is modified.
     """
@@ -91,10 +92,12 @@ def flatten_variant(variant: dict):
     for key, value in kv_pair:
         assert isinstance(key, str)
         if isinstance(value, dict):
-            sub_variant = flatten_variant(value)
+            sub_variant = flatten_variant4hparams(value)
             for k, v in sub_variant.items():
                 variant.update({
                     key + "." + k: v
                 })
             variant.pop(key)
+        elif not isinstance(value, numbers.Number):
+            variant[key] = str(value)
     return variant
