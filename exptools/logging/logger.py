@@ -181,6 +181,8 @@ def tf_text_summary(name, data, step=None):
         no need for `step` data
     '''
     if _tf_available:
+        if step is None:
+            step = _tf_dump_step
         tf.summary.text(name=name, data=data, step= step)
 
 

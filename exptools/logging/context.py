@@ -58,8 +58,9 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none")
     if logger._tf_available:
         with tf.summary.create_file_writer(exp_dir).as_default():
             hp.hparams(flatten_variant(deepcopy(log_params)))
-    
-    yield
+            yield
+    else:
+        yield
 
     logger.remove_tabular_output(tabular_log_file)
     logger.remove_text_output(text_log_file)
