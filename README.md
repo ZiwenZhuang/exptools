@@ -27,6 +27,8 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
     ```
 
 - You can also install with tensorflow/tensorboard installed in your python enrironment. And you can utilize tensorboard feature.
+
+    **Important:** You have to manually install `tensorflow` (no matter if it is GPU version) to make the package compatible for tensorboard.
     
     For futher information, please see `setup.py`
 

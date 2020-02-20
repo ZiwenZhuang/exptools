@@ -12,43 +12,18 @@ basic_install_requires = [
 ]
 ver_num = "0.1.0"
 
-# NOTE: the version is not check here
-tf_requires = ["tensorflow-cpu>=2.1.0"]
-tf_gpu_requires = ["tensorflow-gpu>=2.1.0"]
+"""NOTE: You have to install tensorflow yourself, in case you are using
+Tensorflow for your experiment"""
+# tf_requires = ["tensorflow-cpu>=2.1.0"]
+# tf_gpu_requires = ["tensorflow-gpu>=2.1.0"]
 tfb_requires = ["tensorboard>=2.1.0"]
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    '--tfb', help= 'An option to choose whether to install tensorboard as viewing method: 0 for no tfb, 1 for tensorflow, 2 for tensorflow-gpu',
-    type= int, default= 0,
+setup(
+    name= "exptools",
+    version= ver_num + "tf",
+    packages= find_packages(),
+    install_requires= basic_install_requires+tfb_requires,
+    license= "MIT License",
+    long_dexcription= open("README.md").read(),
 )
-args = parser.parse_args()
-
-if args.tfb == 0:
-    setup(
-        name= "exptools",
-        version= ver_num + "base",
-        packages= find_packages(),
-        install_requires= basic_install_requires,
-        license= "MIT License",
-        long_dexcription= open("README.md").read(),
-    )
-elif args.tfb == 1:
-    setup(
-        name= "exptools",
-        version= ver_num + "tf",
-        packages= find_packages(),
-        install_requires= basic_install_requires+tf_requires+tfb_requires,
-        license= "MIT License",
-        long_dexcription= open("README.md").read(),
-    )
-elif args.tfb == 2:
-    setup(
-        name= "exptools",
-        version= ver_num + "tfgpu",
-        packages= find_packages(),
-        install_requires= basic_install_requires+tf_gpu_requires+tfb_requires,
-        license= "MIT License",
-        long_dexcription= open("README.md").read(),
-    )
     
