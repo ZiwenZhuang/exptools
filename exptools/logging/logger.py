@@ -185,6 +185,15 @@ def tf_text_summary(name, data, step=None):
             step = _tf_dump_step
         tf.summary.text(name=name, data=data, step= step)
 
+def tf_image_summary(name, data, step=None):
+    """ add a batch of images as summary.
+    NOTE: data has to be in shape (n, H, W, C) or following order
+    """
+    if _tf_available:
+        if step is None:
+            step = _tf_dump_step
+        tf.summary.image(name=name, data=data, step= step)
+
 
 def log(s, with_prefix=True, with_timestamp=True, color=None):
     if not _disabled:
