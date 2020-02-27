@@ -16,7 +16,7 @@ ver_num = "0.1.0"
 Tensorflow for your experiment"""
 # tf_requires = ["tensorflow-cpu>=2.1.0"]
 # tf_gpu_requires = ["tensorflow-gpu>=2.1.0"]
-tfb_requires = ["tensorboard==2.0.2"]
+tfb_requires = ["tensorboard>=2.0.2"]
 
 setup(
     name= "exptools",
