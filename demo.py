@@ -11,7 +11,13 @@ import sys
 # not be able to debug your experiment.
 def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
     # I prefer put all tunable default configs into launch file
+
+    # acquire affinity asigned by the launcher.
+    # NOTE: If the affinity is a list, it means multiple resources (gpu) 
+    # is assigned to current experiment
     affinity = affinity_from_code(affinity_code)
+
+    
     # now you will have `config` as a dictionary in the same
     # structure you define your default configurations
     config = load_variant(log_dir)
