@@ -1,3 +1,4 @@
+import os
 
 from exptools.collections import AttrDict
 
@@ -454,3 +455,24 @@ def build_affinities_gpu_1cpu_drive(slt, gpu, cpu, cxg=1, gpr=1, cpw=1,
         cuda_idx=my_gpu,
     )
     return affinity
+
+def set_gpu_from_visibles(cuda_idxs, n_gpu_max= 16):
+    """ NOTE: we assume a machine has at most 16 gpu installed (system wise)
+    Given the cuda idx, we set the environment variable from original
+    cuda variable if existed. In order to meet the multi-tasks GPU usage.
+    """
+    if not isinstance(cuda_idxs, list):
+        cuda_idxs = [cuda_idxs]
+
+    try:
+        env_devices = os.environ['CUDA_VISIBLE_DEVICES']
+        assert env_devices != ""
+    except:
+        env_devices = ",".join(str(range(n_gpu_max)))
+    env_idxs = [s for s in env_devices.split(",")]
+
+    set_idxs = [] # a list of str
+    for cuda_idx in cuda_idxs:
+        set_idxs.append(env_idxs[cuda_idx])
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = ",".join(set_idxs)
