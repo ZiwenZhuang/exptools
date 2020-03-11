@@ -31,7 +31,7 @@ def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
         logger.log("Start running experiment")
         for epoch_i in range(10):
             # log your scalar with this function for example
-            logger.record_tabular("metric1", epoch_i)
+            logger.record_tabular("metric1", epoch_i, epoch_i)
             # dump all logs into csv file (This is the exact function that
             # write one line into progress.csv file)
             logger.dump_tabular()
