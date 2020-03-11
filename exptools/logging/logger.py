@@ -206,7 +206,7 @@ def log(s, with_prefix=True, with_timestamp=True, color=None):
             sys.stdout.flush()
 
 
-def record_tabular(key, val, *args, **kwargs):
+def record_tabular(key, val, itr= None, *args, **kwargs):
     ''' record scalar 'val' to given 'key', where _tabular_prefix_str will be added
     '''
     # if not _disabled and not _tabular_disabled:
@@ -448,7 +448,7 @@ def save_itr_params(itr, params, name= "", ext= ".pkl"):
 #             return {'$enum': o.__module__ + "." + o.__class__.__name__ + '.' + o.name}
 #         return json.JSONEncoder.default(self, o)
 
-def record_tabular_misc_stat(key, values, placement='back'):
+def record_tabular_misc_stat(key, values, itr= None, placement='back'):
     if placement == 'front':
         prefix = ""
         suffix = key
@@ -456,14 +456,14 @@ def record_tabular_misc_stat(key, values, placement='back'):
         prefix = key
         suffix = ""
     if len(values) > 0:
-        record_tabular(prefix + "Average" + suffix, np.average(values))
-        record_tabular(prefix + "Std" + suffix, np.std(values))
-        record_tabular(prefix + "Median" + suffix, np.median(values))
-        record_tabular(prefix + "Min" + suffix, np.min(values))
-        record_tabular(prefix + "Max" + suffix, np.max(values))
+        record_tabular(prefix + "Average" + suffix, np.average(values), itr)
+        record_tabular(prefix + "Std" + suffix, np.std(values), itr)
+        record_tabular(prefix + "Median" + suffix, np.median(values), itr)
+        record_tabular(prefix + "Min" + suffix, np.min(values), itr)
+        record_tabular(prefix + "Max" + suffix, np.max(values), itr)
     else:
-        record_tabular(prefix + "Average" + suffix, np.nan)
-        record_tabular(prefix + "Std" + suffix, np.nan)
-        record_tabular(prefix + "Median" + suffix, np.nan)
-        record_tabular(prefix + "Min" + suffix, np.nan)
-        record_tabular(prefix + "Max" + suffix, np.nan)
+        record_tabular(prefix + "Average" + suffix, np.nan, itr)
+        record_tabular(prefix + "Std" + suffix, np.nan, itr)
+        record_tabular(prefix + "Median" + suffix, np.nan, itr)
+        record_tabular(prefix + "Min" + suffix, np.nan, itr)
+        record_tabular(prefix + "Max" + suffix, np.nan, itr)
