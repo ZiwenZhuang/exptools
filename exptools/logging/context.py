@@ -27,7 +27,7 @@ def get_log_dir(experiment_name):
     return log_dir
 
 @contextmanager
-def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none"):
+def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none", itr_i= 0):
     """ setup the context for one experiment with these parameters.
         And save experiment parameters through 'log_params' as you need. \\
         NOTE: This will look for `data` folder under the directory you run python.
@@ -58,6 +58,7 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none")
     with open(params_log_file, "w") as f:
         json.dump(log_params, f)
     if logger._tf_available:
+        logger._tf_dump_step = itr_i
         with tf.summary.create_file_writer(exp_dir).as_default():
             hp.hparams(flatten_variant4hparams(deepcopy(log_params)))
             yield
