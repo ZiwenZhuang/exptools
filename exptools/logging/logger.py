@@ -24,6 +24,7 @@ try:
     import tensorflow as tf
     import tensorboard as tfb
 except ImportError as e:
+    print("tensorflow is not available in exptools")
     pass
 else:
     _tf_available = True
