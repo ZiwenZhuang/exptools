@@ -229,7 +229,7 @@ def record_tabular(key, val, itr= None, *args, **kwargs):
     _tabular.append((_tabular_prefix_str + str(key), str(val)))
     # add tf scalar summary if available
     itr = _tf_dump_step if itr is None else itr
-    tf_scalar_summary(key, val, _tf_dump_step)
+    tf_scalar_summary(key, val, itr)
 
 
 def push_tabular_prefix(key):
@@ -302,6 +302,8 @@ def dump_tabular(*args, **kwargs):
     '''
     global _tf_dump_step
     _tf_dump_step += 1
+    if _tf_available:
+        tf.summary.flush()
     if not _disabled:  # and not _tabular_disabled:
         wh = kwargs.pop("write_header", None)
         if len(_tabular) > 0:
@@ -350,8 +352,6 @@ def dump_tabular(*args, **kwargs):
                             tabular_dict[key] = np.nan
                     writer.writerow(tabular_dict)
                     tabular_fd.flush()
-                    if _tf_available:
-                        tf.summary.flush()
             del _tabular[:]
 
 
