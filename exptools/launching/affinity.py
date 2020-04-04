@@ -476,3 +476,27 @@ def set_gpu_from_visibles(cuda_idxs, n_gpu_max= 16):
         set_idxs.append(env_idxs[cuda_idx])
 
     os.environ['CUDA_VISIBLE_DEVICES'] = ",".join(set_idxs)
+
+def combine_affinity(affinities):
+        """ Considering the affinity could be a list of affinity, conbine all resources at the
+        the disposal of one experiment
+        """
+        affinity = {f: list() for f in affinities[0].keys()}
+        for k in affinity.keys():
+            if "cpus" in k:
+                for aff in affinities:
+                    affinity[k].extend(aff[k])
+            elif "torch_threads" in k:
+                num = 0
+                for aff in affinities:
+                    num += aff[k]
+                affinity[k] = num
+            elif "cuda_idx" == k:
+                for aff in affinities:
+                    affinity[k].append(aff[k])
+            else:
+                # should be "alternating" and "set_affinity" keys
+                affinity[k] = False
+                for aff in affinities:
+                    affinity[k] |= aff[k]
+        return affinity
