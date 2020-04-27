@@ -56,7 +56,7 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none",
     log_params["name"] = name
     log_params["run_ID"] = run_ID
     with open(params_log_file, "w") as f:
-        json.dump(log_params, f)
+        json.dump(log_params, f, indent= 4)
     if logger._tf_available:
         logger._tf_dump_step = itr_i
         with tf.summary.create_file_writer(exp_dir).as_default():
