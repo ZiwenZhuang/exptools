@@ -6,6 +6,7 @@ from exptools.launching.variant import load_variant
 from exptools.logging.context import logger_context
 import exptools.logging.logger as logger
 import sys
+import os
 
 # You have to name your main entrance using this name, or you might
 # not be able to debug your experiment.
@@ -25,6 +26,10 @@ def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
     name = "demo_experiment"
     # This helps you know what GPU is recommand to you for this experiment
     gpu_idx = affinity["cuda_idx"]
+
+    print(affinity)
+    print(os.environ["CUDA_VISIBLE_DEVICES"])
+    print(os.environ["CONDA_DEFAULT_ENV"])
 
     # under a logger context, run your experiment.
     with logger_context(log_dir, run_ID, name, config):

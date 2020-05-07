@@ -55,6 +55,24 @@ def quick_affinity_code(n_parallel=None, use_gpu=True):
         return encode_affinity(n_cpu_core=n_cpu_core, n_gpu=0,
             cpu_per_run=cpu_per_run)
 
+def full_resource_affinity():
+    """ In order to cooperate with slurm, assuming all resources it sees are assigned to this
+    run of experiment.
+    """
+    import psutil
+    n_cpu_core = psutil.cpu_count(logical=False)
+    if os.environ.get("CUDA_VISIBLE_DEVICES", None) is not None:
+        import torch
+        n_gpu = torch.cuda.device_count()
+    else:
+        n_gpu = 0
+    return affinity_from_code(encode_affinity(
+            n_cpu_core= n_cpu_core,
+            n_gpu= n_gpu,
+            cpu_per_run= n_cpu_core,
+            gpu_per_run= max(1, n_gpu),
+            run_slot= 0,
+        ))
 
 def encode_affinity(
         n_cpu_core=1,  # Total number to use on machine (not virtual).
@@ -116,6 +134,9 @@ def prepend_run_slot(run_slot, affinity_code):
 
 def affinity_from_code(run_slot_affinity_code):
     """Use in individual experiment script; pass output to Runner."""
+    if run_slot_affinity_code == "slurm":
+        # to support slurm acquire all resources this job can access
+        return full_resource_affinity()
     run_slot, aff_code = remove_run_slot(run_slot_affinity_code)
     aff_params = decode_affinity(aff_code)
     if aff_params.get(N_GPU, 0) > 0:

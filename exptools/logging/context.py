@@ -14,11 +14,14 @@ TABULAR_FILE = "progress.csv"
 TEXT_LOG_FILE = "debug.log"
 PARAMS_LOG_FILE = "params.json"
 
-def get_log_dir(experiment_name):
-    """ return string of "${ProjectPATH}/data/local/$date/$experiment_name/"
+LOCAL_EXP = "local"
+SLURM_EXP = "slurm"
+
+def get_log_dir(experiment_name, exp_machine= LOCAL_EXP):
+    """ return string of "${ProjectPATH}/data/{exp_machine}/${date}/{experiment_name}/"
     """
     yyyymmdd = datetime.datetime.today().strftime("%Y%m%d")
-    log_dir = osp.join(LOG_DIR, "local", experiment_name, yyyymmdd)
+    log_dir = osp.join(LOG_DIR, exp_machine, experiment_name, yyyymmdd)
     return log_dir
 
 @contextmanager
