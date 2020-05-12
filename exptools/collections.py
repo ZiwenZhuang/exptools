@@ -109,9 +109,9 @@ def namedarraytuple(typename, field_names, return_namedtuple_cls=False,
     """
     def shape(self):
         values = list()
-        for _, v in self:
+        for v in self:
             values.append(v.shape) # this '.shape' could be called recursively
-        return type(self)(tuple(values))
+        return type(self)(*values)
 
     for method in (__getitem__, __setitem__, get, items):
         method.__qualname__ = f'{typename}.{method.__name__}'
