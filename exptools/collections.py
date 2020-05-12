@@ -103,6 +103,16 @@ def namedarraytuple(typename, field_names, return_namedtuple_cls=False,
         for k, v in zip(self._fields, self):
             yield k, v
 
+    shape_doc = """ A property that returns the same namedarraytuple with each element 
+    the return of their .shape property. NOTE: you have to make sure all of 
+    its elements has 'shape' attribute.
+    """
+    def shape(self):
+        values = list()
+        for _, v in self:
+            values.append(v.shape) # this '.shape' could be called recursively
+        return type(self)(tuple(values))
+
     for method in (__getitem__, __setitem__, get, items):
         method.__qualname__ = f'{typename}.{method.__name__}'
 
@@ -115,6 +125,7 @@ def namedarraytuple(typename, field_names, return_namedtuple_cls=False,
         '__contains__': __contains__,
         'get': get,
         'items': items,
+        'shape': property(shape, doc= shape_doc),
     }
 
     for index, name in enumerate(NtCls._fields):
