@@ -8,8 +8,10 @@ import random
 import importlib.util
 
 from exptools.launching.affinity import get_n_run_slots, prepend_run_slot, affinity_from_code
-from exptools.logging.context import get_log_dir
+from exptools.logging.context import get_log_dir, SLURM_EXP
 from exptools.launching.variant import save_variant
+
+from exptools.launching.slurm import SlurmResource, make_sbatch_script
 
 
 def log_exps_tree(exp_dir, log_dirs, runs_per_setting):
@@ -36,6 +38,11 @@ def log_num_launched(exp_dir, n, total):
         timestamp = f"{timestamp} | "
         f.write(f"{timestamp}Experiments launched so far: {n} out of {total}.\n")
 
+def make_call_command(script, slot_affinity_code, log_dir, run_ID, args):
+    """ A common protocol to make a call string to experiment entrance file """
+    call_command = ["python", script, slot_affinity_code, log_dir, str(run_ID)]
+    call_command += [str(a) for a in args]
+    return call_command
 
 def launch_experiment(script, run_slot, affinity_code, log_dir, variant, run_ID, args, new_process: bool= True):
     """ 
@@ -57,8 +64,7 @@ def launch_experiment(script, run_slot, affinity_code, log_dir, variant, run_ID,
         cpus = ()
     if cpus:
         call_list += ["taskset", "-c", cpus]  # PyTorch obeys better than just psutil.
-    call_command = ["python", script, slot_affinity_code, log_dir, str(run_ID)]
-    call_command += [str(a) for a in args]
+    call_command = make_call_command(script, slot_affinity_code, log_dir, run_ID, args)
     save_variant(variant, log_dir)
     if new_process:
         print("\ncall string:\n", " ".join(call_list + call_command))
@@ -150,3 +156,43 @@ def run_experiments(script, affinity_code, experiment_title, runs_per_setting,
     for p in procs:
         if p is not None:
             p.wait()  # Don't return until they are all done.
+
+def run_on_slurm(script: str, slurm_resource: SlurmResource, experiment_title: str,
+        runs_per_setting: int, variants, log_dirs,
+        common_args= None, runs_args= None, debug_mode= 0
+    ):
+    """ A interface connecting PySbatch and this exptools. All stdout of the experiment will be
+    direct to log_dirs (the parent of 'run_ID') named as 'run_ID.stdout'
+    @ Args:
+        exclude: a string specifying the nodes you want to exclude, might be different depend on
+            clusters.
+        debug_mode: 0 - no debugging; NOTE: did not support later debugging
+    """
+    exp_dir = get_log_dir(experiment_title, exp_machine= SLURM_EXP)
+    assert len(variants) == len(log_dirs)
+    if runs_args is None:
+        runs_args = [()] * len(variants)
+    common_args = () if common_args is None else common_args
+    assert len(runs_args) == len(variants)
+    log_exps_tree(exp_dir, log_dirs, runs_per_setting)
+    
+    # start deploying experiments
+    for run_ID in range(runs_per_setting):
+        if debug_mode > 0:
+            raise NotImplementedError
+        else:
+            # common case, deploy experiments as slurm jobs one by one
+            for variant, log_dir, run_args in zip(variants, log_dirs, runs_args):
+                log_dir = osp.join(exp_dir, log_dir)
+                os.makedirs(log_dir, exist_ok=True)
+                save_variant(variant, log_dir)
+                call_command = make_call_command(script, "slurm", log_dir, run_ID, common_args + run_args)
+                slurm_script = make_sbatch_script(
+                    log_dir= log_dir,
+                    run_ID= run_ID,
+                    call_command= call_command,
+                    slurm_resource= slurm_resource,
+                )
+                # TODO: acquiree job id after calling sbatch
+                os.system("sbatch " + slurm_script)
+                print("sbatch deploy on command: \n\t" + " ".join(call_command))
