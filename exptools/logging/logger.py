@@ -471,7 +471,7 @@ def save_itr_params(itr, params, name= "", ext= ".pkl"):
 #             return {'$enum': o.__module__ + "." + o.__class__.__name__ + '.' + o.name}
 #         return json.JSONEncoder.default(self, o)
 
-def record_tabular_misc_stat(key, values, itr= None, placement='back'):
+def record_tabular_misc_stat(key, values, itr= None, placement='back', pad_nan= False):
     if placement == 'front':
         prefix = ""
         suffix = key
@@ -486,7 +486,7 @@ def record_tabular_misc_stat(key, values, itr= None, placement='back'):
         record_tabular(prefix + "Median" + suffix, np.median(values), itr)
         record_tabular(prefix + "Min" + suffix, np.min(values), itr)
         record_tabular(prefix + "Max" + suffix, np.max(values), itr)
-    else:
+    elif pad_nan:
         record_tabular(prefix + "Average" + suffix, np.nan, itr)
         record_tabular(prefix + "Std" + suffix, np.nan, itr)
         record_tabular(prefix + "Median" + suffix, np.nan, itr)
