@@ -6,13 +6,14 @@ import os.path as osp
 import json
 
 from exptools.logging import logger
+from exptools.launching.variant import VARIANT
 
 # NOTE: you have to run your python command at your project root directory \
 # (the parent directory of your 'data' directory)
 LOG_DIR = osp.abspath(osp.join(os.getcwd(), 'data'))
 TABULAR_FILE = "progress.csv"
 TEXT_LOG_FILE = "debug.log"
-PARAMS_LOG_FILE = "params.json"
+PARAMS_LOG_FILE = VARIANT
 
 def get_log_dir(experiment_name):
     """ return string of "${ProjectPATH}/data/local/$date/$experiment_name/"
