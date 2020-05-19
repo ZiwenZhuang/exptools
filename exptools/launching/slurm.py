@@ -7,10 +7,11 @@ from collections import namedtuple
 
 # for the safe of usage please build it using kwargs
 SlurmResource = namedtuple("SlurmResource", [
-    "mem", "n_gpus", "cuda_module", "singularity_img", "exclude"
+    "mem", "time", "n_gpus", "cuda_module", "singularity_img", "exclude"
 ])
 def build_slurm_resource(
         mem: str= "12G",
+        time: str= "24:00:00",
         n_gpus: int= 0,
         cuda_module: str= None,
         singularity_img: str= None,
@@ -26,14 +27,16 @@ def build_slurm_resource(
             provided, no singularity module will be used
         exclude: a string specifying the nodes you want to exclude, might be different depend on
             clusters.
+        time: a string with "hh:mm:ss" format telling the running time limit.
     """
-    return SlurmResource(mem=mem, n_gpus=n_gpus, cuda_module=cuda_module,
+    return SlurmResource(mem=mem, time= time, n_gpus=n_gpus, cuda_module=cuda_module,
         singularity_img=singularity_img, exclude=exclude,
     )
 
 sbatch_template = """#!/usr/bin/env bash
 #SBATCH --nodes=1
 #SBATCH --mem={mem}
+#SBATCH --time={time}
 #SBATCH -o {stdout}
 #SBATCH -e {stderr}
 """
@@ -54,6 +57,7 @@ def make_sbatch_script(
     ###### Adding SBATCH options for requesting resources ######
     sbatch_string = sbatch_template.format(
         mem= slurm_resource.mem,
+        time= slurm_resource.time,
         stdout= path.join(log_dir, "run_{}.stdout".format(run_ID)),
         stderr= path.join(log_dir, "run_{}.stderr".format(run_ID)),
     )
