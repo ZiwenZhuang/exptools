@@ -7,7 +7,7 @@ import json
 from copy import deepcopy
 
 from exptools.logging import logger
-from exptools.launching.variant import flatten_variant4hparams
+from exptools.launching.variant import flatten_variant4hparams, VARIANT
 if logger._tf_available:
     import tensorflow as tf
     from tensorboard.plugins.hparams import api as hp
@@ -17,7 +17,7 @@ if logger._tf_available:
 LOG_DIR = osp.abspath(osp.join(os.getcwd(), 'data'))
 TABULAR_FILE = "progress.csv"
 TEXT_LOG_FILE = "debug.log"
-PARAMS_LOG_FILE = "params.json"
+PARAMS_LOG_FILE = VARIANT
 
 def get_log_dir(experiment_name):
     """ return string of "${ProjectPATH}/data/local/$date/$experiment_name/"
