@@ -282,7 +282,9 @@ class NamedTupleSchema:
 
     def _make(self, iterable):
         """Allows instances to act like `namedtuple` constructors."""
-        return NamedTuple(self._typename, self._fields, iterable)
+        ntuple = NamedTuple(self._typename, self._fields, iterable)
+        ntuple.__class__ == self
+        return ntuple
 
     def __setattr__(self, name, value):
         """Make the type-like object immutable."""
