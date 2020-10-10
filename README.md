@@ -48,7 +48,7 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
     (go to `logging.logger`)
 - [x] Auto Prefix for logging title (python context manager should be good)
     (go to `logging.context.logger_context()` and `logging.logger.prefix()`)
-- [ ] Customized iteration number when logging 
+- [x] Customized iteration number when logging 
     It seems no longer needed because they usually log iteration number in the tabular.
 - [x] Different types of snapshot and resuming method (go to `logging.save_itr_params`)
 - [x] Logging multiple types of data and easy to view (Tensorboard protocol seems good)
@@ -67,6 +67,9 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
     * It should export every frame, not like Tensorboard who downsampled the curve longer than 1k frames.
     (progress.csv in your log_dir is what you need)
 
+- [x] Easy to make plots for publishing paper
+    * See `make_paper_figure.py`
+
 ## Usage (API requirement)
 
 You can see demo from `launch_demo.py` and `demo.py`
@@ -75,41 +78,13 @@ You can see demo from `launch_demo.py` and `demo.py`
 
 1. Script loading configuration and building variants
 
-    ```python
-    from exptools.collections import AttrDict
-    from exptools.launching.exp_launcher import run_experiments
-    from exptools.launching.variant import VariantLevel, update_config
-    from exptools.launching.affinity import encode_affinity, quick_affinity_code
-
-    # Either manually set the resources for the experiment:
-    affinity_code = encode_affinity(
-        n_cpu_core=4,
-        n_gpu=4,
-        # hyperthread_offset=8,  # if auto-detect doesn't work, number of CPU cores
-        # n_socket=1,  # if auto-detect doesn't work, can force (or force to 1)
-        cpu_per_run=1,
-        set_affinity=True,  # it can help to restrict workers to individual CPUs
-    )
-    # Or try an automatic one, but results may vary:
-    # affinity_code = quick_affinity_code(n_parallel=None, use_gpu=True)
-
-    # setup your configurations, or you can build via VariantLevel to make cross 
-    # combination.
-    variant = AttrDict(...)
-
-    run_experiments(
-        script= "path/to/your/experiment/script",
-        affinity_code= affinity_code,
-        experiment_title= "experiment title",
-        runs_per_setting= THE_number_of_experiment_you_will_do_in_one_variant,
-        variants= [variant],
-        log_dirs= [log_dir], # the directory under "${experiment title}"
-    )
-    ```
+    * see `launch_demo.py` and `launch_slurm_demo.py`
 
     If any types of attribute not found error occurred, that should be missing from your launch file.
 
 2. Script running experiment
+
+    * see `demo.py`
 
     Your actual script that carries out the experiment should be in this following API.
 

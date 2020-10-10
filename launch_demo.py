@@ -10,7 +10,8 @@ default_config = dict(
         choiceA = "hello",
         choiceB = "great",
     ),
-    optionB = 2
+    optionB = 2,
+    optionC = 1e5,
 )
 
 def main(args):
@@ -25,14 +26,21 @@ def main(args):
     values = [
         ["one",],
         ["two",],
+        ["three",],
+        ["four",],
+        ["five",],
+        ["six",],
+        ["seven",],
+        ["eight",],
     ]
     dir_names = ["{}".format(*v) for v in values]
     keys = [("optionA", "choiceA")] # each entry in the list is the string path to your config
     variant_levels.append(VariantLevel(keys, values, dir_names))
 
     values = [
-        ["good", int(1e-3)],
+        ["good", int(2e3)],
         ["better", int(1e3)],
+        ["best", int(5e2)],
     ]
     dir_names = ["{}".format(*v) for v in values]
     keys = [("optionA", "choiceB"), ("optionB",)]
@@ -68,7 +76,7 @@ if __name__ == "__main__":
         # configuration for remote attach and debug
         import ptvsd
         import sys
-        ip_address = ('0.0.0.0', 5050)
+        ip_address = ('0.0.0.0', 6789)
         print("Process: " + " ".join(sys.argv[:]))
         print("Is waiting for attach at address: %s:%d" % ip_address, flush= True)
         # Allow other computers to attach to ptvsd at this IP address and port.
