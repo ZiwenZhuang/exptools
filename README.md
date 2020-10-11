@@ -1,6 +1,8 @@
 # Exptools
+<img align="right" width="360" height="180" src="figures/showcase.jpg">
 
 A unified experiment deploy, logging, visualizatoin, comparsion tool (based on Tensorboard)
+
 
 ## Related Works
 
