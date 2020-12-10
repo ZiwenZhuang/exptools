@@ -18,16 +18,16 @@ import json
 import torch
 import threading
 
-_tf_available = False
-_tf_dump_step = 0 # to synchronize with dump_tabular()
+_tb_available = False
+_tb_writer = None
+_tb_dump_step = 0 # to synchronize with dump_tabular()
 try:
-    import tensorflow as tf
-    import tensorboard as tfb
+    import tensorboardX
 except ImportError as e:
-    print("tensorflow is not available in exptools")
+    print("TensorboardX is not available in exptools")
     pass
 else:
-    _tf_available = True
+    _tb_available = True
 
 mp_lock = threading.Lock()
 
@@ -176,29 +176,41 @@ def get_disable_prefix():
     return _disable_prefix
 
 
-def tf_scalar_summary(name, data, step):
-    if _tf_available:
+def tb_scalar(name, data, step):
+    if _tb_available:
         """Log a scalar variable."""
-        tf.summary.scalar(name=name, data=data, step= step)
+        assert _tb_writer is not None
+        _tb_writer.add_scalar(tag=name, scalar_value=data, global_step= step)
 
-def tf_text_summary(name, data, step=None):
+def tb_text(name, data, step=None):
     ''' data has to be a string
         no need for `step` data
     '''
-    if _tf_available:
+    if _tb_available:
+        assert _tb_writer is not None
         if step is None:
-            step = _tf_dump_step
-        tf.summary.text(name=name, data=data, step= step)
+            step = _tb_dump_step
+        _tb_writer.add_text(tag=name, text_string=data, global_step= step)
 
-def tf_image_summary(name, data, step=None):
-    """ add a batch of images as summary.
-    NOTE: data has to be in shape (n, H, W, C) or following order
+def tb_image(name, data, step=None):
+    """ add a image as summary.
+    NOTE: data has to be in shape (C, H, W), where C can only be 1, 3 or 4
     """
-    if _tf_available:
+    if _tb_available:
+        assert _tb_writer is not None
         if step is None:
-            step = _tf_dump_step
-        tf.summary.image(name=name, data=data, step= step)
+            step = _tb_dump_step
+        _tb_writer.add_image(tag=name, img_tensor=data, global_step= step)
 
+def tb_images(name, data, step= None):
+    """ add a batch of images as summary
+    NOTE: data has to be in shape (N, C, H, W), where C can only be 1, 3 or 4
+    """
+    if _tb_available:
+        assert _tb_writer is not None
+        if step is None:
+            step = _tb_dump_step
+        _tb_writer.add_images(tag= name, img_tensor= data, global_step= step)
 
 def log(s, with_prefix=True, with_timestamp=True, color=None):
     if not _disabled:
@@ -219,7 +231,7 @@ def log(s, with_prefix=True, with_timestamp=True, color=None):
                 fd.flush()
             sys.stdout.flush()
         # add tf text summary if available
-        tf_text_summary("log", out)
+        tb_text("log", out)
 
 
 def record_tabular(key, val, itr= None, *args, **kwargs):
@@ -228,8 +240,8 @@ def record_tabular(key, val, itr= None, *args, **kwargs):
     # if not _disabled and not _tabular_disabled:
     _tabular.append((_tabular_prefix_str + str(key), str(val)))
     # add tf scalar summary if available
-    itr = _tf_dump_step if itr is None else itr
-    tf_scalar_summary(key, val, itr)
+    itr = _tb_dump_step if itr is None else itr
+    tb_scalar(key, val, itr)
 
 
 def push_tabular_prefix(key):
@@ -300,9 +312,9 @@ def dump_tabular(*args, **kwargs):
     NOTE: *args, **kwargs options epscifying for 'log' function.
         And 'log' function are used to print tabular.
     '''
-    global _tf_dump_step
-    _tf_dump_step += 1
-    if _tf_available:
+    global _tb_dump_step
+    _tb_dump_step += 1
+    if _tb_available:
         tf.summary.flush()
     if not _disabled:  # and not _tabular_disabled:
         wh = kwargs.pop("write_header", None)
@@ -379,98 +391,6 @@ def save_itr_params(itr, params, name= "", ext= ".pkl"):
             raise NotImplementedError
         torch.save(params, file_name)
 
-""" 'log_parameters', 'stub_to_json', 'log_variant' and 'log_parameters_lite' seems never used, I uncomment them here"""
-# def log_parameters(log_file, args, classes):
-#     log_params = {}
-#     for param_name, param_value in args.__dict__.items():
-#         if any([param_name.startswith(x) for x in list(classes.keys())]):
-#             continue
-#         log_params[param_name] = param_value
-#     for name, cls in classes.items():
-#         if isinstance(cls, type):
-#             params = get_all_parameters(cls, args)
-#             params["_name"] = getattr(args, name)
-#             log_params[name] = params
-#         else:
-#             log_params[name] = getattr(cls, "__kwargs", dict())
-#             log_params[name]["_name"] = cls.__module__ + "." + cls.__class__.__name__
-#     mkdir_p(os.path.dirname(log_file))
-#     with open(log_file, "w") as f:
-#         json.dump(log_params, f, indent=2, sort_keys=True)
-
-# def stub_to_json(stub_sth):
-#     from rllab.misc import instrument
-#     from rllab.misc import instrument2
-#     if isinstance(stub_sth, instrument.StubObject) or isinstance(stub_sth, instrument2.StubObject):
-#         assert len(stub_sth.args) == 0
-#         data = dict()
-#         for k, v in stub_sth.kwargs.items():
-#             data[k] = stub_to_json(v)
-#         data["_name"] = stub_sth.proxy_class.__module__ + "." + stub_sth.proxy_class.__name__
-#         return data
-#     elif isinstance(stub_sth, instrument.StubAttr) or isinstance(stub_sth, instrument2.StubAttr):
-#         return dict(
-#             obj=stub_to_json(stub_sth.obj),
-#             attr=stub_to_json(stub_sth.attr_name)
-#         )
-#     elif isinstance(stub_sth, instrument.StubMethodCall) or isinstance(stub_sth, instrument2.StubMethodCall):
-#         return dict(
-#             obj=stub_to_json(stub_sth.obj),
-#             method_name=stub_to_json(stub_sth.method_name),
-#             args=stub_to_json(stub_sth.args),
-#             kwargs=stub_to_json(stub_sth.kwargs),
-#         )
-#     elif isinstance(stub_sth, instrument.BinaryOp) or isinstance(stub_sth, instrument2.BinaryOp):
-#         return "binary_op"
-#     elif isinstance(stub_sth, instrument.StubClass) or isinstance(stub_sth, instrument2.StubClass):
-#         return stub_sth.proxy_class.__module__ + "." + stub_sth.proxy_class.__name__
-#     elif isinstance(stub_sth, dict):
-#         return {stub_to_json(k): stub_to_json(v) for k, v in stub_sth.items()}
-#     elif isinstance(stub_sth, (list, tuple)):
-#         return list(map(stub_to_json, stub_sth))
-#     elif type(stub_sth) == type(lambda: None):
-#         if stub_sth.__module__ is not None:
-#             return stub_sth.__module__ + "." + stub_sth.__name__
-#         return stub_sth.__name__
-#     elif "theano" in str(type(stub_sth)):
-#         return repr(stub_sth)
-#     return stub_sth
-
-# def log_parameters_lite(log_file, args):
-#     log_params = {}
-#     for param_name, param_value in args.__dict__.items():
-#         log_params[param_name] = param_value
-#     if args.args_data is not None:
-#         stub_method = pickle.loads(base64.b64decode(args.args_data))
-#         method_args = stub_method.kwargs
-#         log_params["json_args"] = dict()
-#         for k, v in list(method_args.items()):
-#             log_params["json_args"][k] = stub_to_json(v)
-#         kwargs = stub_method.obj.kwargs
-#         for k in ["baseline", "env", "policy"]:
-#             if k in kwargs:
-#                 log_params["json_args"][k] = stub_to_json(kwargs.pop(k))
-#         log_params["json_args"]["algo"] = stub_to_json(stub_method.obj)
-#     mkdir_p(os.path.dirname(log_file))
-#     with open(log_file, "w") as f:
-#         json.dump(log_params, f, indent=2, sort_keys=True, cls=MyEncoder)
-
-# def log_variant(log_file, variant_data):
-#     mkdir_p(os.path.dirname(log_file))
-#     if hasattr(variant_data, "dump"):
-#         variant_data = variant_data.dump()
-#     variant_json = stub_to_json(variant_data)
-#     with open(log_file, "w") as f:
-#         json.dump(variant_json, f, indent=2, sort_keys=True, cls=MyEncoder)
-
-# class MyEncoder(json.JSONEncoder):
-#     def default(self, o):
-#         if isinstance(o, type):
-#             return {'$class': o.__module__ + "." + o.__name__}
-#         elif isinstance(o, Enum):
-#             return {'$enum': o.__module__ + "." + o.__class__.__name__ + '.' + o.name}
-#         return json.JSONEncoder.default(self, o)
-
 def record_tabular_misc_stat(key, values, itr= None, placement='back', pad_nan= False):
     if placement == 'front':
         prefix = ""
@@ -478,7 +398,7 @@ def record_tabular_misc_stat(key, values, itr= None, placement='back', pad_nan= 
     else:
         prefix = key
         suffix = ""
-        if _tf_available:
+        if _tb_available:
             prefix += "/"  # Group stats together in Tensorboard.
     if len(values) > 0:
         record_tabular(prefix + "Average" + suffix, np.average(values), itr)

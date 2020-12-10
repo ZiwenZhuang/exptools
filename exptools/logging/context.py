@@ -8,9 +8,8 @@ from copy import deepcopy
 
 from exptools.logging import logger
 from exptools.launching.variant import flatten_variant4hparams, VARIANT
-if logger._tf_available:
-    import tensorflow as tf
-    from tensorboard.plugins.hparams import api as hp
+if logger._tb_available:
+    import tensorboardX
 
 # NOTE: you have to run your python command at your project root directory \
 # (the parent directory of your 'data' directory)
@@ -19,11 +18,14 @@ TABULAR_FILE = "progress.csv"
 TEXT_LOG_FILE = "debug.log"
 PARAMS_LOG_FILE = VARIANT
 
-def get_log_dir(experiment_name):
-    """ return string of "${ProjectPATH}/data/local/$date/$experiment_name/"
+LOCAL_EXP = "local"
+SLURM_EXP = "slurm"
+
+def get_log_dir(experiment_name, exp_machine= LOCAL_EXP):
+    """ return string of "${ProjectPATH}/data/{exp_machine}/${date}/{experiment_name}/"
     """
     yyyymmdd = datetime.datetime.today().strftime("%Y%m%d")
-    log_dir = osp.join(LOG_DIR, "local", experiment_name, yyyymmdd)
+    log_dir = osp.join(LOG_DIR, exp_machine, experiment_name, yyyymmdd)
     return log_dir
 
 @contextmanager
@@ -57,13 +59,15 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none",
     log_params["run_ID"] = run_ID
     with open(params_log_file, "w") as f:
         json.dump(log_params, f, indent= 4)
-    if logger._tf_available:
-        logger._tf_dump_step = itr_i
-        with tf.summary.create_file_writer(exp_dir).as_default():
-            hp.hparams(flatten_variant4hparams(deepcopy(log_params)))
-            yield
-    else:
-        yield
+        
+    if logger._tb_available:
+        logger._tb_writer = tensorboardX.SummaryWriter(logdir= exp_dir)
+        logger._tb_dump_step = itr_i
+        logger._tb_writer.add_hparams(
+            hparam_dict= flatten_variant4hparams(deepcopy(log_params))
+        )
+            
+    yield
 
     logger.remove_tabular_output(tabular_log_file)
     logger.remove_text_output(text_log_file)
