@@ -12,7 +12,7 @@ basic_install_requires = [
 ]
 ver_num = "0.1.0"
 
-tfb_requires = ["tensorboardX", "crc32c", "soundfile"]
+tfb_requires = ["tensorboard", "tensorboardX", "crc32c", "soundfile"]
 
 setup(
     name= "exptools",
