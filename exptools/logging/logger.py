@@ -315,7 +315,7 @@ def dump_tabular(*args, **kwargs):
     global _tb_dump_step
     _tb_dump_step += 1
     if _tb_available:
-        tf.summary.flush()
+        _tb_writer.flush()
     if not _disabled:  # and not _tabular_disabled:
         wh = kwargs.pop("write_header", None)
         if len(_tabular) > 0:

@@ -63,11 +63,16 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none",
     if logger._tb_available:
         logger._tb_writer = tensorboardX.SummaryWriter(logdir= exp_dir)
         logger._tb_dump_step = itr_i
+        flattened_hparam = flatten_variant4hparams(deepcopy(log_params))
         logger._tb_writer.add_hparams(
-            hparam_dict= flatten_variant4hparams(deepcopy(log_params))
+            hparam_dict= dict(**flattened_hparam),
+            metric_dict= {"dummy_metric": 0.0},
         )
             
     yield
+
+    if logger._tb_available:
+        logger._tb_writer.close()
 
     logger.remove_tabular_output(tabular_log_file)
     logger.remove_text_output(text_log_file)
