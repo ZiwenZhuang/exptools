@@ -66,8 +66,8 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none",
         flattened_hparam = flatten_variant4hparams(deepcopy(log_params))
         logger._tb_writer.add_hparams(
             hparam_dict= dict(**flattened_hparam),
-            metric_dict= {"zero_dummy_metric": 0.0}, # start with 'z', tensorboard will at most show it in the bottom.
-            name= "/", # According to tensorboardX source code, use this to prevent another tensorboard directory.
+            metric_dict= dict(z_dummy_metric= 0.0), # no metric to record, use 'z' to be put in the end.
+            name= "./", # According to tensorboardX source code, use this to prevent another tensorboard directory.
         )
             
     yield
