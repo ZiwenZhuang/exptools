@@ -13,21 +13,23 @@ def build_slurm_resource(
         mem: str= "12G",
         time: str= "24:00:00",
         n_gpus: int= 0,
+        partition: str= None,
         cuda_module: str= None,
         singularity_img: str= None,
         exclude: str= None,
     ):
     """
+    Specifying slurm resources refering to https://slurm.schedmd.com/sbatch.html
     @ Args:
         cuda_module: a string telling what cuda module is on your cluster, it has to be provided
             if n_gpus > 0
-        conda_env: a string telling which anaconda environment to use for experiment. if None, no
-            python environment will be modified
+        partition: "--partition" a string for slurm partition.
         singularity_img: a string telling the absolute path of your singularity image, if not
             provided, no singularity module will be used
         exclude: a string specifying the nodes you want to exclude, might be different depend on
             clusters.
-        time: a string with "hh:mm:ss" format telling the running time limit.
+        time: a string with "hh:mm:ss" format telling the running time limit, or "d-hh:mm:ss" for 
+            longer time limit.
     """
     return SlurmResource(mem=mem, time= time, n_gpus=n_gpus, cuda_module=cuda_module,
         singularity_img=singularity_img, exclude=exclude,
@@ -61,6 +63,8 @@ def make_sbatch_script(
         stdout= path.join(log_dir, "run_{}.stdout".format(run_ID)),
         stderr= path.join(log_dir, "run_{}.stderr".format(run_ID)),
     )
+    if not slurm_resource.partition is None:
+        sbatch_string += "\n#SBATCH --partition={}".format(slurm_resource.partition)
     if not slurm_resource.exclude is None:
         sbatch_string += "\n#SBATCH --exclude={}".format(slurm_resource.exclude)
     if slurm_resource.n_gpus > 0:
