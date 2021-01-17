@@ -7,7 +7,7 @@ from collections import namedtuple
 
 # for the safe of usage please build it using kwargs
 SlurmResource = namedtuple("SlurmResource", [
-    "mem", "time", "n_gpus", "cuda_module", "singularity_img", "exclude"
+    "mem", "time", "n_gpus", "partition", "cuda_module", "singularity_img", "exclude"
 ])
 def build_slurm_resource(
         mem: str= "12G",
@@ -31,8 +31,8 @@ def build_slurm_resource(
         time: a string with "hh:mm:ss" format telling the running time limit, or "d-hh:mm:ss" for 
             longer time limit.
     """
-    return SlurmResource(mem=mem, time= time, n_gpus=n_gpus, cuda_module=cuda_module,
-        singularity_img=singularity_img, exclude=exclude,
+    return SlurmResource(mem=mem, time= time, n_gpus=n_gpus, partition= partition,
+        cuda_module=cuda_module, singularity_img=singularity_img, exclude=exclude,
     )
 
 sbatch_template = """#!/usr/bin/env bash
