@@ -189,6 +189,7 @@ def run_on_slurm(script: str, slurm_resource: SlurmResource, experiment_title: s
                 call_command = make_call_command(script, "slurm", log_dir, run_ID, common_args + run_args)
                 slurm_script = make_sbatch_script(
                     log_dir= log_dir,
+                    experiment_title= experiment_title,
                     run_ID= run_ID,
                     call_command= call_command,
                     slurm_resource= slurm_resource,

@@ -45,6 +45,7 @@ sbatch_template = """#!/usr/bin/env bash
 
 def make_sbatch_script(
         log_dir,
+        experiment_title,
         run_ID,
         call_command,
         slurm_resource: SlurmResource
@@ -86,6 +87,6 @@ def make_sbatch_script(
     # now is time to add call_command as the last piece of the script
     sbatch_string += " ".join(call_command)
 
-    with open(path.join(log_dir, "run_exp.slurm"), 'w') as f:
+    with open(path.join(log_dir, "{}.slurm".format(experiment_title)), 'w') as f:
         f.write(sbatch_string)
-    return path.join(log_dir, "run_exp.slurm")
+    return path.join(log_dir, "{}.slurm".format(experiment_title))
