@@ -11,7 +11,7 @@ from exptools.launching.affinity import get_n_run_slots, prepend_run_slot, affin
 from exptools.logging.context import get_log_dir, SLURM_EXP
 from exptools.launching.variant import save_variant
 
-from exptools.launching.slurm import SlurmResource, make_sbatch_script
+from exptools.launching.slurm import SlurmResource, make_sbatch_script, slurm_debug_command
 
 
 def log_exps_tree(exp_dir, log_dirs, runs_per_setting):
@@ -179,7 +179,12 @@ def run_on_slurm(script: str, slurm_resource: SlurmResource, experiment_title: s
     # start deploying experiments
     for run_ID in range(runs_per_setting):
         if debug_mode > 0:
-            raise NotImplementedError
+            raise RuntimeError("It has been tested that slurm job cannot be used to remote debug, see comments for further details.")
+            """
+            The trial is done using ptvsd and trying to listen to external port. But the local 
+            computer cannot connect to the script.
+            Maybe need a ssh forwarding from the administrator node.
+            """
         else:
             # common case, deploy experiments as slurm jobs one by one
             for variant, log_dir, run_args in zip(variants, log_dirs, runs_args):
