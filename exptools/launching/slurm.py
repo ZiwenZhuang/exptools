@@ -90,3 +90,48 @@ def make_sbatch_script(
     with open(path.join(log_dir, "{}.slurm".format(experiment_title)), 'w') as f:
         f.write(sbatch_string)
     return path.join(log_dir, "{}.slurm".format(experiment_title))
+
+
+"""
+Trying to make debug feature on slurm, but failed. These code can still be reused.
+"""
+def slurm_debug_command(script, debug_host, log_dir, run_ID, args):
+    """ A common protocol to make a call string to slurm debug entrance file
+    This command should lead to calling this script directly.
+    """
+    call_command = ["python", __file__, debug_host, script, log_dir, str(run_ID)]
+    call_command += [str(a) for a in args]
+    return call_command
+
+def debug_experiment(debug_host:str, script, *exp_args):
+    import ptvsd
+    import sys
+    import importlib.util
+    ip_address = debug_host.split(":")
+    ip_address[1] = int(ip_address[1])
+    print("Process: " + " ".join(sys.argv[:]))
+    print("Is waiting for attach at address: %s:%d" % tuple(ip_address), flush= True)
+    # Allow other computers to attach to ptvsd at this IP address and port.
+    ptvsd.enable_attach(address=ip_address)
+    # Pause the program until a remote debugger is attached
+    ptvsd.wait_for_attach()
+    print("Process attached, start running into experiment...", flush= True)
+    ptvsd.break_into_debugger()
+
+    # load script and call as the protocol described
+    file_abspath = os.path.abspath(script)
+    module_name = file_abspath.split("/")[-1][:-3] # exclude ".py" chars
+    module_spec = importlib.util.spec_from_file_location(name= module_name, location= file_abspath)
+    module = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(module)
+    # call experiment
+    if hasattr(module, "main"):
+        module.main(*exp_args) # feed the command start from after the script name
+    elif hasattr(module, "build_and_train"):
+        module.build_and_train(*exp_args)
+
+if __name__ == "__man__":
+    """ NOTE: This script should only called by exp_launcher using slurm script.
+    """
+    import sys
+    debug_experiment(*sys.argv[1:])
