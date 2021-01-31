@@ -9,6 +9,7 @@ basic_install_requires = [
     "plotly==4.0.0", 
     "flask==1.0.2",
     "psutil",
+    "pandas",
 ]
 ver_num = "0.1.0"
 
