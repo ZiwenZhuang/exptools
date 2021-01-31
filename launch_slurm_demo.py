@@ -15,6 +15,9 @@ default_config = dict(
 
 def main(args):
     experiment_title = "demo_experiment"
+    # add another name if you want to show differently on squeue.
+    # You can leave it as `None` if you don't need another script name.
+    script_name = "exptools_slurm_demo"
     slurm_resource = build_slurm_resource(
         mem= "12G",
         n_gpus= 1,
@@ -52,6 +55,7 @@ def main(args):
         script= "demo.py",
         slurm_resource= slurm_resource,
         experiment_title= experiment_title,
+        script_name= script_name,
         runs_per_setting= 1,
         variants= variants,
         log_dirs= log_dirs,
