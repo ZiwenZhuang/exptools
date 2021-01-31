@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import itertools
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 
 from exptools.launching.variant import flatten_variant4hparams
 
@@ -26,9 +27,10 @@ class PaperCurvePlotter:
 	def __init__(self, exp_paths,
 			log_filename= "progress.csv",
 			param_filename= "variant_config.json",
-			n_fig_a_row= 4, one_fig_size= 5,
-			fontsize= 32, fig_name_shorten_level= 0,
+			n_fig_a_row= 4, one_fig_size= (5, 5),
+			fontsize= 18, fig_name_shorten_level= 0,
 			x_lim: tuple= (-5*1e6, 50*1e6), y_lim: tuple=(0.0, 1e3),
+			show_legend= False,
 		):
 		"""
 		@ Args:
@@ -46,6 +48,7 @@ class PaperCurvePlotter:
 		self.x_lim = x_lim
 		self.y_lim = y_lim
 		self.fig_name_shorten_level = fig_name_shorten_level
+		self.show_legend = show_legend
 		self.color_map = dict()
 		self.df = pd.DataFrame()
 		
@@ -66,6 +69,8 @@ class PaperCurvePlotter:
 					abspath = os.path.abspath(path)
 					param["experiment_log_path"] = abspath
 					self.df = self.df.append(param, ignore_index= True)
+		if self.df.empty:
+			Warning("You got an empty database, please theck your exp_paths")
 
 	def make_plots(self, args_in_figures, args_in_series, x_key, y_key,
 			xlabel= None, ylabel= None,
@@ -140,17 +145,24 @@ class PaperCurvePlotter:
 			ax.tick_params(axis='both', labelsize=14)
 			ax.set_title(fig_name, fontsize=16)
 			ax.set_xlim(self.x_lim)
-			ax.ticklabel_format(style='sci', axis='x', scilimits=(1, 1))
+			ax.ticklabel_format(style='sci', axis='x', scilimits=sci_lim)
 
-		if xlabel is None: xlabel = x_key
-		if ylabel is None: ylabel = y_key
 		self.finish_plot(xlabel, ylabel)
 
 	def finish_plot(self, xlabel, ylabel):
-		plt.xlabel(xlabel, fontsize= self.fontsize)
-		plt.ylabel(ylabel, fontsize= self.fontsize)
+		if xlabel is not None: plt.xlabel(xlabel, fontsize= self.fontsize)
+		if ylabel is not None: plt.ylabel(ylabel, fontsize= self.fontsize)
 		plt.xlim(self.x_lim)
 		plt.ylim(self.y_lim)
+		plt.subplots_adjust(left= 0.05, bottom= 0.16)
+
+		if self.show_legend:
+			plt.subplots_adjust(right= 0.85)
+			plt.legend(
+				loc='upper left',
+				bbox_to_anchor= (1, 1),
+				handles= [mlines.Line2D([],[], color= v, label= k) for k, v in self.color_map.items()]
+			)
 
 		save_name = ylabel + "_to_" + xlabel + "_plots.png"
 		save_filename = os.path.join(os.getcwd(), save_name)
@@ -159,28 +171,32 @@ class PaperCurvePlotter:
 		plt.savefig(save_filename)
 
 	def create_figure(self, n_figures):
+		legend_margin = 5 if self.show_legend else 0
 		if n_figures > 1:
 			n_cols = min(n_figures, self.n_fig_a_row)
 			n_rows = (n_figures-1) // self.n_fig_a_row + 1
 			fig, axs = plt.subplots(n_rows, n_cols,
 				sharex= True,
-				figsize= (n_cols*self.one_fig_size, n_rows*self.one_fig_size)
+				figsize= (n_cols*self.one_fig_size[0] + legend_margin, n_rows*self.one_fig_size[1] + 1)
 			)
 			fig.add_subplot(111, frameon=False)
 			# hide tick and tick label of the big axes
 			plt.tick_params(axis='both', which='both', bottom=False, top=False,
 							left=False, right=False, labelcolor='none')
 		else:
-			fig, ax = plt.subplots(1, 1)
+			fig, ax = plt.subplots(1, 1,
+				figsize= (self.one_fig_size[0] + legend_margin, self.one_fig_size[1] + 1)
+			)
 			axs = np.array(ax)
 		return fig, axs
 
-	def plot_exp(self, ax, paths: list, x= "tcount", y= "eprew",
+	def plot_exp(self, ax, paths: list, x: str= None, y= "eprew",
 			label= ""):
 		""" plot data based on given experiment logs, curve will be compute mean for all logs
 
 		@ Args:
 			paths: list[str] a list of absolute path
+			x, y: str telling which curve you want to plot (assuming lots of curves in a .csv)
 		"""
 		all_runs = []
 		nframes = None
@@ -189,7 +205,7 @@ class PaperCurvePlotter:
 				try:
 					df = pd.read_csv(f)
 					all_runs.append(df[y])
-					nframes = df[x]
+					nframes = list(range(len(df[y]))) if x is None else df[x]
 				except:
 					print("Exception while reading file ", sys.exc_info()[0], path)
 

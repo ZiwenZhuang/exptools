@@ -5,8 +5,10 @@ from exptools.viewing.plotter import PaperCurvePlotter
 def main():
 	paths = ["/root/exptools/data/local/demo_experiment"]
 	plotter = PaperCurvePlotter(paths,
-		x_lim= (-2, 20),
-		fig_name_shorten_level= 1
+		x_lim= (-2, 200),
+		y_lim= (-10, 200),
+		fig_name_shorten_level= 1,
+		show_legend= True,
 	)
 	plotter.make_plots(
 		args_in_figures= {"optionA.choiceA": None,},
