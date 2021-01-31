@@ -159,6 +159,7 @@ def run_experiments(script, affinity_code, experiment_title, runs_per_setting,
 
 def run_on_slurm(script: str, slurm_resource: SlurmResource, experiment_title: str,
         runs_per_setting: int, variants, log_dirs,
+        script_name: str= None,
         common_args= None, runs_args= None, debug_mode= 0
     ):
     """ A interface connecting PySbatch and this exptools. All stdout of the experiment will be
@@ -194,7 +195,7 @@ def run_on_slurm(script: str, slurm_resource: SlurmResource, experiment_title: s
                 call_command = make_call_command(script, "slurm", log_dir, run_ID, common_args + run_args)
                 slurm_script = make_sbatch_script(
                     log_dir= log_dir,
-                    experiment_title= experiment_title,
+                    script_name= experiment_title if script_name is None else script_name,
                     run_ID= run_ID,
                     call_command= call_command,
                     slurm_resource= slurm_resource,
