@@ -73,7 +73,7 @@ class PaperCurvePlotter:
 			Warning("You got an empty database, please theck your exp_paths")
 
 	def make_plots(self, args_in_figures, args_in_series, x_key, y_key,
-			xlabel= None, ylabel= None,
+			xlabel= None, ylabel= None, margins= (1, 1, 1, 1),
 			sci_lim= (1, 1),
 		):
 		""" The main entrance ploting all experiments by design. The two arguments are specifying
@@ -85,6 +85,7 @@ class PaperCurvePlotter:
 				(seperated in each figure)
 			args_in_series: dict{str: list} plot all experiments that meet the specifications
 				(seperated in each curve)
+			margins: a tuple of 4 margin in inches, in the order of (top, bottom, left, right)
 			sci_lim: tuple(int, int) demote the scientific notation of x and y, (exponent of 10)
 		"""
 		self.marked_labels = []
@@ -116,7 +117,7 @@ class PaperCurvePlotter:
 			self.series_label_mapping[label] = optionset
 			self.color_map[label] = color_defaults[i]
 		
-		fig, axs = self.create_figure(n_figures)
+		self.fig, axs = self.create_figure(n_figures)
 
 		# plot each figure one by one
 		for ax, fig_optionset in zip(
@@ -147,21 +148,29 @@ class PaperCurvePlotter:
 			ax.set_xlim(self.x_lim)
 			ax.ticklabel_format(style='sci', axis='x', scilimits=sci_lim)
 
-		self.finish_plot(xlabel, ylabel)
+		self.finish_plot(xlabel, ylabel, margins)
 
-	def finish_plot(self, xlabel, ylabel):
+	def finish_plot(self, xlabel, ylabel, margins):
 		if xlabel is not None: plt.xlabel(xlabel, fontsize= self.fontsize)
 		if ylabel is not None: plt.ylabel(ylabel, fontsize= self.fontsize)
 		plt.xlim(self.x_lim)
 		plt.ylim(self.y_lim)
-		plt.subplots_adjust(left= 0.05, bottom= 0.16)
+		plt.subplots_adjust(
+			top = 1 - (margins[0] / self.fig.get_size_inches()[0]),
+			bottom= margins[1] / self.fig.get_size_inches()[1],
+			left= margins[2] / self.fig.get_size_inches()[0],
+		)
 
 		if self.show_legend:
-			plt.subplots_adjust(right= 0.85)
+			plt.subplots_adjust(right= 1 - ((margins[3] + 2) / self.fig.get_size_inches()[0]))
 			plt.legend(
 				loc='upper left',
 				bbox_to_anchor= (1, 1),
 				handles= [mlines.Line2D([],[], color= v, label= k) for k, v in self.color_map.items()]
+			)
+		else:
+			plt.subplots_adjust(
+				right= 1 - (margins[3] / self.fig.get_size_inches()[0])
 			)
 
 		save_name = ylabel + "_to_" + xlabel + "_plots.png"
