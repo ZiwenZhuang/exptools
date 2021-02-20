@@ -70,7 +70,7 @@ class PaperCurvePlotter:
 					param["experiment_log_path"] = abspath
 					self.df = self.df.append(param, ignore_index= True)
 		if self.df.empty:
-			Warning("You got an empty database, please theck your exp_paths")
+			Warning("You got an empty database, please check your exp_paths")
 
 	def make_plots(self, args_in_figures, args_in_series, x_key, y_key,
 			xlabel= None, ylabel= None, margins= (1, 1, 1, 1),
