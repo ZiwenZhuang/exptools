@@ -15,7 +15,11 @@ import csv
 import json
 # import pickle
 # import base64
-import torch
+try:
+    import torch
+except ImportError as e:
+    import warnings
+    warnings.warn("Cannot import torch, function limited for exptools: " + str(e))
 import threading
 
 _tb_available = False
