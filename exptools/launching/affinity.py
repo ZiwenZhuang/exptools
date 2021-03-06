@@ -64,11 +64,11 @@ def full_resource_affinity():
     """
     import psutil
     n_cpu_core = psutil.cpu_count(logical=False)
-    if os.environ.get("CUDA_VISIBLE_DEVICES", None) is not None:
+    try:
         import torch
         n_gpu = torch.cuda.device_count()
-    else:
-        n_gpu = 0
+    except ImportError as e:
+        n_gpu = len(os.environ["CUDA_VISIBLE_DEVICES"].split(",")) if "CUDA_VISIBLE_DEVICES" in os.environ else 0
     return affinity_from_code(encode_affinity(
             n_cpu_core= n_cpu_core,
             n_gpu= n_gpu,
