@@ -35,8 +35,11 @@ def quick_affinity_code(n_parallel=None, use_gpu=True):
     import psutil
     n_cpu_core = psutil.cpu_count(logical=False)
     if use_gpu:
-        import torch
-        n_gpu = torch.cuda.device_count()
+        try:
+            import torch
+            n_gpu = torch.cuda.device_count()
+        except ImportError as e:
+            n_gpu = len(os.environ["CUDA_VISIBLE_EVICES"].split(","))
     else:
         n_gpu = 0
     if n_gpu > 0:
@@ -116,6 +119,9 @@ def prepend_run_slot(run_slot, affinity_code):
 
 def affinity_from_code(run_slot_affinity_code):
     """Use in individual experiment script; pass output to Runner."""
+    if run_slot_affinity_code == "slurm":
+        # to support slurm acquire all resources this job can access
+        return full_resource_affinity()
     run_slot, aff_code = remove_run_slot(run_slot_affinity_code)
     aff_params = decode_affinity(aff_code)
     if aff_params.get(N_GPU, 0) > 0:
