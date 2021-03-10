@@ -194,8 +194,8 @@ def get_disable_prefix():
 def record_image(name, data, itr= None):
     """ NOTE: data must be (H, W) or (3, H, W) or (4, H, W)
     """
-    os.system("mkdkr -p %s" % os.path.join(_snapshot_dir, "image"))
-    filename = os.path.join(_snapshot_dir, "image", "{}-{}".format(name, itr))
+    os.system("mkdir -p %s" % os.path.join(_snapshot_dir, "image"))
+    filename = os.path.join(_snapshot_dir, "image", "{}-{}.png".format(name, itr))
     if len(data.shape) == 3:
         imageio.imwrite(filename, np.transpose(data, (1,2,0)), format= "PNG")
     else:
@@ -205,12 +205,12 @@ def record_gif(name, data, itr= None, duration= 0.1):
     """ record a series of image as gif into file
     NOTE: data must be a sequence of nparray (H, W) or (3, H, W) or (4, H, W)
     """
-    os.system("mkdkr -p %s" % os.path.join(_snapshot_dir, "gif"))
-    filename = os.path.join(_snapshot_dir, "gif", "{}-{}".format(name, itr))
-    if data and len(data[0].shape) == 3:
-        imageio.imwrite(filename, [np.transpose(d, (1,2,0)) for d in data], format= "GIF", duration= duration)
+    os.system("mkdir -p %s" % os.path.join(_snapshot_dir, "gif"))
+    filename = os.path.join(_snapshot_dir, "gif", "{}-{}.gif".format(name, itr))
+    if isinstance(data, np.ndarray) or (len(data) > 0 and len(data[0].shape)) == 3:
+        imageio.mimwrite(filename, [np.transpose(d, (1,2,0)) for d in data], format= "GIF", duration= duration)
     else:
-        imageio.imwrite(filename, data, format= "GIF", duration= duration)
+        imageio.mimwrite(filename, data, format= "GIF", duration= duration)
 
 def log(s, with_prefix=True, with_timestamp=True, color=None):
     if not _disabled:
