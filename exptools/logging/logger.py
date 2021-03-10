@@ -9,6 +9,7 @@ import os
 import os.path as osp
 import sys
 import datetime
+import imageio
 # import dateutil.tz
 import csv
 # import joblib
@@ -146,7 +147,7 @@ def get_snapshot_mode():
     return _snapshot_mode
 
 
-def set_snapshot_mode(mode):
+def set _snapshot_mode(mode):
     if isinstance(mode, int):
         gap = mode
         mode = "gap"
@@ -178,7 +179,6 @@ def set_disable_prefix(disable_prefix):
 
 def get_disable_prefix():
     return _disable_prefix
-
 
 def tb_scalar(name, data, step):
     if _tb_available:
@@ -215,6 +215,28 @@ def tb_images(name, data, step= None):
         if step is None:
             step = _tb_dump_step
         _tb_writer.add_images(tag= name, img_tensor= data, global_step= step)
+
+def record_image(name, data, itr= None):
+    """ NOTE: data must be (H, W) or (3, H, W) or (4, H, W)
+    """
+    os.system("mkdkr -p %s" % os.path.join(_snapshot_dir, "image"))
+    filename = os.path.join(_snapshot_dir, "image", "{}-{}".format(name, itr))
+    if len(data.shape) == 3:
+        imageio.imwrite(filename, np.transpose(data, (1,2,0)), format= "PNG")
+    else:
+        imageio.imwrite(filename, data, format= "PNG")
+    tb_image(name, data, itr)
+
+def record_gifs(name, data, itr= None, duration= 0.1):
+    """ record a series of image as gif into file
+    NOTE: data must be a sequence of nparray (H, W) or (3, H, W) or (4, H, W)
+    """
+    os.system("mkdkr -p %s" % os.path.join(_snapshot_dir, "gif"))
+    filename = os.path.join(_snapshot_dir, "gif", "{}-{}".format(name, itr))
+    if data and len(data[0].shape) == 3:
+        imageio.imwrite(filename, [np.transpose(d, (1,2,0)) for d in data], format= "GIF", duration= duration)
+    else:
+        imageio.imwrite(filename, data, format= "GIF", duration= duration)
 
 def log(s, with_prefix=True, with_timestamp=True, color=None):
     if not _disabled:

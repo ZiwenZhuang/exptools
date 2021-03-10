@@ -137,9 +137,6 @@ def prepend_run_slot(run_slot, affinity_code):
 
 def affinity_from_code(run_slot_affinity_code):
     """Use in individual experiment script; pass output to Runner."""
-    if run_slot_affinity_code == "slurm":
-        # to support slurm acquire all resources this job can access
-        return full_resource_affinity()
     run_slot, aff_code = remove_run_slot(run_slot_affinity_code)
     aff_params = decode_affinity(aff_code)
     if aff_params.get(N_GPU, 0) > 0:
