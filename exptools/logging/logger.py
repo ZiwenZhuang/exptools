@@ -201,7 +201,7 @@ def record_image(name, data, itr= None):
     else:
         imageio.imwrite(filename, data, format= "PNG")
 
-def record_gifs(name, data, itr= None, duration= 0.1):
+def record_gif(name, data, itr= None, duration= 0.1):
     """ record a series of image as gif into file
     NOTE: data must be a sequence of nparray (H, W) or (3, H, W) or (4, H, W)
     """
