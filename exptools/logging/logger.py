@@ -157,7 +157,7 @@ def get_snapshot_mode():
     return _snapshot_mode
 
 
-def set _snapshot_mode(mode):
+def set_snapshot_mode(mode):
     if isinstance(mode, int):
         gap = mode
         mode = "gap"
