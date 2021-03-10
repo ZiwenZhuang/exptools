@@ -2,7 +2,11 @@
 import numpy as np
 import multiprocessing as mp
 import ctypes
-import torch
+try:
+    import torch
+except ImportError as e:
+    import warnings
+    warnings.warn("Cannot import torch, function limited for exptools: " + str(e))
 
 from exptools.collections import namedarraytuple_like
 
