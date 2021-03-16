@@ -5,6 +5,7 @@ import os
 import os.path as osp
 import json
 from copy import deepcopy
+import csv
 
 from exptools.logging import logger
 from exptools.launching.variant import flatten_variant4hparams, VARIANT
@@ -59,6 +60,14 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none",
     log_params["run_ID"] = run_ID
     with open(params_log_file, "w") as f:
         json.dump(log_params, f, indent= 4)
+
+    itr_i = 0
+    for filename in logger._tabular_fds.keys():
+        with open(filename, "r") as fd:
+            reader = csv.reader(fd)
+            if len(list(reader)) > 0: # means the file has been written before
+                logger._tabular_header_written.add(filename)
+                itr_i = len(list(reader)) - 1
         
     if logger._tb_available:
         logger._tb_writer = tensorboardX.SummaryWriter(logdir= exp_dir)
@@ -69,7 +78,7 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none",
             metric_dict= dict(z_dummy_metric= 0.0), # no metric to record, use 'z' to be put in the end.
             name= "./", # According to tensorboardX source code, use this to prevent another tensorboard directory.
         )
-            
+
     yield
 
     if logger._tb_available:
