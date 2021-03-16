@@ -4,6 +4,7 @@ import datetime
 import os
 import os.path as osp
 import json
+import csv
 
 from exptools.logging import logger
 from exptools.launching.variant import VARIANT
@@ -53,6 +54,14 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none")
     log_params["run_ID"] = run_ID
     with open(params_log_file, "w") as f:
         json.dump(log_params, f, indent= 4)
+
+    itr_i = 0
+    for filename in logger._tabular_fds.keys():
+        with open(filename, "r") as fd:
+            reader = csv.reader(fd)
+            if len(list(reader)) > 0: # means the file has been written before
+                logger._tabular_header_written.add(filename)
+                itr_i = len(list(reader)) - 1
 
     yield
 
