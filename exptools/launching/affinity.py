@@ -39,7 +39,7 @@ def quick_affinity_code(n_parallel=None, use_gpu=True):
             import torch
             n_gpu = torch.cuda.device_count()
         except ImportError as e:
-            n_gpu = len(os.environ["CUDA_VISIBLE_EVICES"].split(","))
+            n_gpu = len(os.environ.get("CUDA_VISIBLE_DEVICES", "").split(","))
     else:
         n_gpu = 0
     if n_gpu > 0:

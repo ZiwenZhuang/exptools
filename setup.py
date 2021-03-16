@@ -10,6 +10,7 @@ basic_install_requires = [
     "flask==1.0.2",
     "psutil",
     "pandas",
+    "imageio",
 ]
 ver_num = "0.1.0"
 
