@@ -109,7 +109,7 @@ def add_tabular_output(file_name):
         _tabular_outputs.append(file_name)
         _tabular_fds[file_name] = _tabular_fds_hold[file_name]
     else:
-        _add_output(file_name, _tabular_outputs, _tabular_fds, mode='w')
+        _add_output(file_name, _tabular_outputs, _tabular_fds, mode='a')
 
 
 def remove_tabular_output(file_name):
