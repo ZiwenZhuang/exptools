@@ -309,8 +309,34 @@ class Logger():
         except:
             print(colorize("Exceptions when closing tensorboardX writer", color= "yellow"))
 
-    # >>>>>>>>> The followings are APIs for other experiment platforms <<<<<<<<    
-
+    # >>>>>>>>> The followings are APIs for other experiment platforms <<<<<<<<
+    def _deprecated_warn(self):
+        print(colorize("You are using dereprecated API of exptools logger", color= "yellow"))
+    def __getattr__(self, name: str):
+        if name == "_tb_writer":
+            self._deprecated_warn()
+            return self.tb_writer
+        else:
+            super(Logger, self).__getattr__(self, name)
+    def record_tabular(self, key, val, step= None):
+        self._deprecated_warn()
+        return self.log_scalar(key, val, step)
+    def record_tabular_misc_stat(self, key, val, step= None):
+        self._deprecated_warn()
+        return self.log_scalar_batch(key, val, step)
+    def dump_tabular(self):
+        self._deprecated_warn()
+        return self.dump_scalar()
+    def log(self, data, step= 0, *args, **kwargs):
+        self._deprecated_warn()
+        return self.log_text(data, step)
+    def record_image(self, *args, **kwargs):
+        self._deprecated_warn()
+        return self.log_image(*args, **kwargs)
+    def record_gif(self, *args, **kwargs):
+        self._deprecated_warn()
+        return self.log_gif(*args, **kwargs)
+    
         
     
 

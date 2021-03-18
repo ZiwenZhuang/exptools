@@ -16,9 +16,6 @@ default_config = dict(
 
 def main(args):
     experiment_title = "demo_experiment"
-    affinity_code = quick_affinity_code(n_parallel=8)
-    # NOTE: you can also use encode_affinity to specifying how to distribute each
-    # experiment in your computing nodes.
 
     # set up variants
     variant_levels = list()
@@ -54,6 +51,7 @@ def main(args):
     if args.where == "local":
         from exptools.launching.affinity import encode_affinity, quick_affinity_code
         from exptools.launching.exp_launcher import run_experiments
+        # NOTE: you can use quick_affinity_code for simplicity
         affinity_code = encode_affinity(
             n_cpu_core= 12,
             n_gpu= 4,
@@ -87,7 +85,7 @@ def main(args):
             runs_per_setting= 1,
             variants= variants,
             log_dirs= log_dirs,
-            debug_mode= args.debug,
+            debug_mode= args.debug, # don't set debug when run on slurm, it is not implemented
         )
     
 if __name__ == "__main__":
