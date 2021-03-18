@@ -51,16 +51,45 @@ def main(args):
     for i, variant in enumerate(variants):
         variants[i] = update_config(default_config, variant)
 
-    run_experiments(
-        script= "demo.py",
-        affinity_code= affinity_code,
-        experiment_title= experiment_title,
-        runs_per_setting= 1, # how many times to run repeated experiments
-        variants= variants,
-        log_dirs= log_dirs,
-        debug_mode= args.debug, # if greater than 0, the launcher will run one variant in this process)
-    )
-
+    if args.where == "local":
+        from exptools.launching.affinity import encode_affinity, quick_affinity_code
+        from exptools.launching.exp_launcher import run_experiments
+        affinity_code = encode_affinity(
+            n_cpu_core= 12,
+            n_gpu= 4,
+            contexts_per_gpu= 3,
+        )
+        run_experiments(
+            script= "demo.py",
+            affinity_code= affinity_code,
+            experiment_title= experiment_title + ("--debug" if args.debug else ""),
+            runs_per_setting= 1, # how many times to run repeated experiments
+            variants= variants,
+            log_dirs= log_dirs,
+            debug_mode= args.debug, # if greater than 0, the launcher will run one variant in this process)
+        )
+    elif args.where == "slurm":
+        from exptools.launching.slurm import build_slurm_resource
+        from exptools.launching.exp_launcher import run_on_slurm
+        slurm_resource = build_slurm_resource(
+            mem= "16G",
+            time= "3-12:00:00",
+            n_gpus= 1,
+            partition= "",
+            cuda_module= "cuda-10.0",
+        )
+        run_on_slurm(
+            script= "demo.py",
+            slurm_resource= slurm_resource,
+            experiment_title= experiment_title + ("--debug" if args.debug else ""),
+            # experiment_title= "temp_test" + ("--debug" if args.debug else ""),
+            script_name= experiment_title,
+            runs_per_setting= 1,
+            variants= variants,
+            log_dirs= log_dirs,
+            debug_mode= args.debug,
+        )
+    
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
@@ -68,6 +97,11 @@ if __name__ == "__main__":
     parser.add_argument(
         '--debug', help= 'A common setting of whether to entering debug mode for remote attach',
         type= int, default= 0,
+    )
+    parser.add_argument(
+        '--where', help= 'slurm or local',
+        type= str, default= "local",
+        choices= ["slurm", "local"],
     )
 
     args = parser.parse_args()
