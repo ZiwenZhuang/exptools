@@ -7,15 +7,14 @@ import json
 from copy import deepcopy
 import csv
 
-from exptools.logging import logger
-from exptools.launching.variant import flatten_variant4hparams, VARIANT
-if logger._tb_available:
-    import tensorboardX
+from exptools.logging import logger, Logger
+from exptools.logging.console import colorize
+from exptools.launching.variant import VARIANT
 
 # NOTE: you have to run your python command at your project root directory \
 # (the parent directory of your 'data' directory)
 LOG_DIR = osp.abspath(osp.join(os.getcwd(), 'data'))
-TABULAR_FILE = "progress.csv"
+SCALAR_LOG_FILE = "progress.csv"
 TEXT_LOG_FILE = "debug.log"
 PARAMS_LOG_FILE = VARIANT
 
@@ -37,86 +36,28 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none",
 
         snapshot_mode: choose between "all", "last", "none", or a int specifying the gap 
     """
-    logger.set_snapshot_mode(snapshot_mode)
-    logger.set_log_tabular_only(False)
     log_dir = osp.join(log_dir, f"run_{run_ID}")
     exp_dir = osp.abspath(log_dir)
     if LOG_DIR != osp.commonpath([exp_dir, LOG_DIR]):
-        print(f"logger_context received log_dir outside of {LOG_DIR}: "
-            f"prepending by {LOG_DIR}/local/<experiment_name>/<yyyymmdd>/")
+        print(colorize(
+            f"logger_context received log_dir outside of {LOG_DIR}: " + \
+            f"prepending by {LOG_DIR}/local/<experiment_name>/<yyyymmdd>/",
+            color= "yellow"
+        ))
         exp_dir = get_log_dir(log_dir)
-    tabular_log_file = osp.join(exp_dir, TABULAR_FILE)
-    text_log_file = osp.join(exp_dir, TEXT_LOG_FILE)
-    params_log_file = osp.join(exp_dir, PARAMS_LOG_FILE)
 
-    logger.set_snapshot_dir(exp_dir)
-    logger.add_text_output(text_log_file)
-    logger.add_tabular_output(tabular_log_file)
-    logger.push_prefix(f"{name}_{run_ID} ")
+    logger.set_client(Logger(exp_dir))
 
-    if log_params is None:
-        log_params = dict()
-    log_params["name"] = name
-    log_params["run_ID"] = run_ID
-    with open(params_log_file, "w") as f:
-        json.dump(log_params, f, indent= 4)
-
-    itr_i = 0
-    for filename in logger._tabular_fds.keys():
-        with open(filename, "r") as fd:
-            reader = csv.reader(fd)
-            if len(list(reader)) > 0: # means the file has been written before
-                logger._tabular_header_written.add(filename)
-                itr_i = len(list(reader)) - 1
-        
-    if logger._tb_available:
-        logger._tb_writer = tensorboardX.SummaryWriter(logdir= exp_dir)
-        logger._tb_dump_step = itr_i
-        flattened_hparam = flatten_variant4hparams(deepcopy(log_params))
-        logger._tb_writer.add_hparams(
-            hparam_dict= dict(**flattened_hparam),
-            metric_dict= dict(z_dummy_metric= 0.0), # no metric to record, use 'z' to be put in the end.
-            name= "./", # According to tensorboardX source code, use this to prevent another tensorboard directory.
-        )
+    logger.add_text_output(TEXT_LOG_FILE)
+    logger.add_scalar_output(SCALAR_LOG_FILE)
+    logger.push_text_prefix(f"{name}_{run_ID} ")
+    print(colorize("Program started, working on...", color= "green"))
 
     yield
 
-    if logger._tb_available:
-        logger._tb_writer.close()
+    print(colorize("Program finished, warpping up...", color= "green"))
+    logger.pop_text_prefix()
+    logger.remove_scalar_output(SCALAR_LOG_FILE)
+    logger.remove_text_output(TEXT_LOG_FILE)
 
-    logger.remove_tabular_output(tabular_log_file)
-    logger.remove_text_output(text_log_file)
-    logger.pop_prefix()
-
-
-def add_exp_param(param_name, param_val, exp_dir=None, overwrite=False):
-    """Puts a param in all experiments in immediate subdirectories.
-    So you can write a new distinguising param after the fact, perhaps
-    reflecting a combination of settings."""
-    if exp_dir is None:
-        exp_dir = os.getcwd()
-    # exp_folders = get_immediate_subdirectories(exp_dir)
-    for sub_dir in os.walk(exp_dir):
-        if PARAMS_LOG_FILE in sub_dir[2]:
-            update_param = True
-            params_f = osp.join(sub_dir[0], PARAMS_LOG_FILE)
-            with open(params_f, "r") as f:
-                params = json.load(f)
-                if param_name in params:
-                    if overwrite:
-                        print("Overwriting param: {}, old val: {}, new val: {}".format(
-                            param_name, params[param_name], param_val))
-                    else:
-                        print("Param {} already found & overwrite set to False; "
-                            "leaving old val: {}.".format(param_name, params[param_name]))
-                        update_param = False
-            if update_param:
-                os.remove(params_f)
-                params[param_name] = param_val
-                with open(params_f, "w") as f:
-                    json.dump(params, f)
-
-
-# def get_immediate_subdirectories(a_dir):
-#     return [osp.join(a_dir, name) for name in os.listdir(a_dir)
-#             if osp.isdir(osp.join(a_dir, name))]
+    logger.unset_client()

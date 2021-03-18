@@ -1,9 +1,6 @@
-from enum import Enum
-
 from exptools.logging.tabulate import tabulate
 from exptools.logging.console import mkdir_p, colorize
 from exptools.logging.autoargs import get_all_parameters
-from contextlib import contextmanager
 import numpy as np
 import os
 import os.path as osp

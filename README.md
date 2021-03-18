@@ -47,18 +47,20 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
 ### Logging during an experiment
 
 - [x] Ubiquitous logger in every layer of the experiment code (accessing the same object)
-    (go to `logging.logger`)
+    (type `from exptools.logging import logger` and you get it)
+    And check `exptools/logging/_logger.py` for API reference
 - [x] Auto Prefix for logging title (python context manager should be good)
-    (go to `logging.context.logger_context()` and `logging.logger.prefix()`)
+    (goto `logging.context.logger_context()`)
 - [x] Customized iteration number when logging 
     It seems no longer needed because they usually log iteration number in the tabular.
-- [x] Different types of snapshot and resuming method (go to `logging.save_itr_params`)
+- [ ] Different types of snapshot and resuming method
 - [x] Logging multiple types of data and easy to view (Tensorboard protocol seems good)
-    Using viskit philosophy, I fix the comparing issue
+    (goto `exptools/logging/_logger.py` for reference)
+    Some of the data has to be viewed by combining sftp and vscode
 
 ### Viewing after or during an experiment
 
-- [x] Beautiful scalar curve (It should be great to export directly for paper/reports)
+- [x] Beautiful scalar curve online (It should be great to export directly for paper/reports)
     Viskit is not beautiful enough, but will do.
 - [x] Compare between different variant
     * Automatically extract the difference between each experiment.
@@ -80,9 +82,105 @@ You can see demo from `launch_demo.py` and `demo.py`
 
 1. Script loading configuration and building variants
 
-    * see `launch_demo.py` and `launch_slurm_demo.py`
+    * see `launch_demo.py`
 
     If any types of attribute not found error occurred, that should be missing from your launch file.
+
+    ```python
+    from exptools.launching.variant import VariantLevel, make_variants, update_config
+    from exptools.launching.affinity import encode_affinity, quick_affinity_code
+    from exptools.launching.exp_launcher import run_experiments
+
+    default_config = dict(
+    )
+
+    def main(args):
+        experiment_title = "demo_experiment"
+        variant_levels = list()
+
+        # values = [
+        #     [,],
+        # ]
+        # dir_names = ["{}".format(*v) for v in values]
+        # keys = [(,),]
+        # variant_levels.append(VariantLevel(keys, values, dir_names))
+
+        # get all variants and their own log directory
+        variants, log_dirs = make_variants(*variant_levels)
+        for i, variant in enumerate(variants):
+            variants[i] = update_config(default_config, variant)
+
+        if args.where == "local":
+            from exptools.launching.affinity import encode_affinity, quick_affinity_code
+            from exptools.launching.exp_launcher import run_experiments
+            affinity_code = encode_affinity(
+                n_cpu_core= 12,
+                n_gpu= 4,
+                contexts_per_gpu= 3,
+            )
+            run_experiments(
+                script= "demo.py",
+                affinity_code= affinity_code,
+                experiment_title= experiment_title + ("--debug" if args.debug else ""),
+                runs_per_setting= 1, # how many times to run repeated experiments
+                variants= variants,
+                log_dirs= log_dirs,
+                debug_mode= args.debug, # if greater than 0, the launcher will run one variant in this process)
+            )
+        elif args.where == "slurm":
+            from exptools.launching.slurm import build_slurm_resource
+            from exptools.launching.exp_launcher import run_on_slurm
+            slurm_resource = build_slurm_resource(
+                mem= "16G",
+                time= "3-12:00:00",
+                n_gpus= 1,
+                partition= "",
+                cuda_module= "cuda-10.0",
+            )
+            run_on_slurm(
+                script= "demo.py",
+                slurm_resource= slurm_resource,
+                experiment_title= experiment_title + ("--debug" if args.debug else ""),
+                # experiment_title= "temp_test" + ("--debug" if args.debug else ""),
+                script_name= experiment_title,
+                runs_per_setting= 1,
+                variants= variants,
+                log_dirs= log_dirs,
+                debug_mode= args.debug,
+            )
+    
+    if __name__ == "__main__":
+        import argparse
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument(
+            '--debug', help= 'A common setting of whether to entering debug mode for remote attach',
+            type= int, default= 0,
+        )
+        parser.add_argument(
+            '--where', help= 'slurm or local',
+            type= str, default= "local",
+            choices= ["slurm", "local"],
+        )
+
+        args = parser.parse_args()
+        # setup for debugging if needed
+        if args.debug > 0:
+            # configuration for remote attach and debug
+            import ptvsd
+            import sys
+            ip_address = ('0.0.0.0', 6789)
+            print("Process: " + " ".join(sys.argv[:]))
+            print("Is waiting for attach at address: %s:%d" % ip_address, flush= True)
+            # Allow other computers to attach to ptvsd at this IP address and port.
+            ptvsd.enable_attach(address=ip_address, redirect_output= True)
+            # Pause the program until a remote debugger is attached
+            ptvsd.wait_for_attach()
+            print("Process attached, start running into experiment...", flush= True)
+            ptvsd.break_into_debugger()
+
+        main(args)
+    ```
 
 2. Script running experiment
 
@@ -91,23 +189,33 @@ You can see demo from `launch_demo.py` and `demo.py`
     Your actual script that carries out the experiment should be in this following API.
 
     ```python
-    from exptools.launching.variant import load_variant
     from exptools.launching.affinity import affinity_from_code
-    import sys, os, json
-    import ...
+    from exptools.launching.variant import load_variant
+    from exptools.logging.context import logger_context
+    from exptools.logging import logger
 
-    def main(affinity_code, log_dir, run_id, *args):
-        variant = load_variant(log_dir)
-        # Then variant is a AttrDict, where you can access your configurations
-        # as attribute or dictionary.
-        gpu_idx = affinity_from_code(affinity_code)["cuda_idx"]
-        # This helps you know what GPU is recommand to you for this experiment
-        ...
+    # You have to name your main entrance using this name, or you might
+    # not be able to debug your experiment.
+    def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
+        affinity = affinity_from_code(affinity_code)
 
+        config = load_variant(log_dir)
+
+        name = "demo_experiment"
+        gpu_idx = affinity.get("cuda_idx", None)
+
+        print(affinity)
+        print(os.environ.get("CUDA_VISIBLE_DEVICES", None))
+        print(os.environ.get("CONDA_DEFAULT_ENV", None))
+
+        # under a logger context, run your experiment.
+        with logger_context(log_dir, run_ID, name, config):
+            logger.log_text("Start running experiment", 0)
+
+    def main(*args):
+        build_and_train(*args)
     if __name__ == "__main__":
-        # The main function name has to be "main" or "build_and_train" (conpatible with rlpyt)
-        main(*sys.argv[1:]) # the argument will be put as follows:
-            # ${affinity_code} ${log_dir} ${run_id} ${*args}
+        build_and_train(*sys.argv[1:])
     ```
 
     Then, you can do whatever you want, even with your own logging mechanism
