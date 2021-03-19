@@ -78,7 +78,7 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
 
 You can see demo from `launch_demo.py` and `demo.py`
 
-### Launching
+### Launching (and script template)
 
 1. Script loading configuration and building variants
 
@@ -88,8 +88,6 @@ You can see demo from `launch_demo.py` and `demo.py`
 
     ```python
     from exptools.launching.variant import VariantLevel, make_variants, update_config
-    from exptools.launching.affinity import encode_affinity, quick_affinity_code
-    from exptools.launching.exp_launcher import run_experiments
 
     default_config = dict(
     )
@@ -202,7 +200,9 @@ You can see demo from `launch_demo.py` and `demo.py`
         config = load_variant(log_dir)
 
         name = "demo_experiment"
-        gpu_idx = affinity.get("cuda_idx", None)
+        # all gpus you should assign to your system
+        # (with respect to all other experiments launched in parallel)
+        gpu_idxs = affinity.get("cuda_idx", None)
 
         print(affinity)
         print(os.environ.get("CUDA_VISIBLE_DEVICES", None))
@@ -210,6 +210,7 @@ You can see demo from `launch_demo.py` and `demo.py`
 
         # under a logger context, run your experiment.
         with logger_context(log_dir, run_ID, name, config):
+            # all logging files will be stored under log_dir/run_ID/
             logger.log_text("Start running experiment", 0)
 
     def main(*args):

@@ -62,6 +62,8 @@ class Logger():
         self._scalar_data = {} # a dict of {filename:pandas_dataframe}
         self._scalar_default_file = None
 
+        self.default_step = 0
+
     def push_text_prefix(self, prefix: str):
         self._text_prefix.append(prefix)
     def pop_text_prefix(self):
@@ -130,13 +132,14 @@ class Logger():
         yield
         self.remove_scalar_output(filename)
 
-    def log_text(self, data, step,
+    def log_text(self, data, step= None,
             filename= None,
             with_prefix= True,
             with_timestamp=True,
             color=None
         ):
         if filename is None: filename = self._text_default_file
+        if step is None: step = self.default_step
 
         out = data
         if with_prefix: 
@@ -155,7 +158,7 @@ class Logger():
         if not self.tb_writer is None:
             self.tb_writer.add_text("text", out, step)
 
-    def log_scalar(self, tag, data, step, filename= None, with_prefix= True, **kwargs):
+    def log_scalar(self, tag, data, step= None, filename= None, with_prefix= True, **kwargs):
         """
         @Args:
             tag: string;
@@ -169,6 +172,7 @@ class Logger():
                 tag = p + tag
         # maintain pandas DataFrame
         df_len = len(self._scalar_data[filename])
+        if step is None: step = self.default_step
         if step > (df_len - 1):
             for _ in range(step - df_len + 1):
                 self._scalar_data[filename] = self._scalar_data[filename].append({}, ignore_index= True)
@@ -186,7 +190,7 @@ class Logger():
         if not self.tb_writer is None:
             self.tb_writer.add_scalar(tag, data, step)
 
-    def log_scalar_batch(self, tag, data, step, filename= None, **kwargs):
+    def log_scalar_batch(self, tag, data, step= None, filename= None, **kwargs):
         """ Record a batch of data with several statictis
         data: a array of numbers np.array is better
         """
@@ -272,11 +276,12 @@ class Logger():
         for k in self._scalar_current_data[filename].keys():
             self._scalar_current_data[filename][k] = np.nan
     
-    def log_image(self, tag, data, step, **kwargs):
+    def log_image(self, tag, data, step= None, **kwargs):
         """ NOTE: data must be (H, W) or (3, H, W) or (4, H, W) from 0-255 uint8
         """
         mkdir_p(osp.join(self.log_dir, "image"))
         filename = osp.join(self.log_dir, "image", "{}-{}.png".format(tag, step))
+        if step is None: step = self.default_step
         if len(data.shape) == 3:
             imageio.imwrite(filename, np.transpose(data, (1,2,0)), format= "PNG")
         else:
@@ -284,17 +289,24 @@ class Logger():
         if not self.tb_writer is None:
             self.tb_writer.add_image(tag, data, step)
 
-    def log_gif(self, tag, data, step, duration= 0.1, **kwargs):
+    def log_gif(self, tag, data, step= None, duration= 0.1, **kwargs):
         """ record a series of image as gif into file
         NOTE: data must be a sequence of nparray (H, W) or (3, H, W) or (4, H, W) from 0-255 uint8
         """
         mkdir_p(osp.join(self.log_dir, "gif"))
         filename = osp.join(self.log_dir, "gif", "{}-{}.gif".format(tag, step))
+        if step is None: step = self.default_step
         if isinstance(data, np.ndarray) or (len(data) > 0 and len(data[0].shape)) == 3:
             imageio.mimwrite(filename, [np.transpose(d, (1,2,0)) for d in data], format= "GIF", duration= duration)
         else:
             imageio.mimwrite(filename, data, format= "GIF", duration= duration)
         # TensorboardX does not support this yet
+
+    def dump_data(self):
+        """ dump all default data handler, and increase default_step by 1
+        """
+        self.default_step += 1
+        self.dump_scalar()
 
     def __del__(self):
         try:

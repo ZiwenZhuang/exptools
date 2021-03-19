@@ -25,8 +25,9 @@ def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
     config = load_variant(log_dir)
 
     name = "demo_experiment"
-    # This helps you know what GPU is recommand to you for this experiment
-    gpu_idx = affinity["cuda_idx"]
+    # all gpus you should assign to your system
+    # (with respect to all other experiments launched in parallel)
+    gpu_idxs = affinity.get("cuda_idx", None)
 
     print(affinity)
     print(os.environ.get("CUDA_VISIBLE_DEVICES", None))
@@ -34,6 +35,7 @@ def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
 
     # under a logger context, run your experiment.
     with logger_context(log_dir, run_ID, name, config):
+            # all logging files will be stored under log_dir/run_ID/
         logger.log_text("Start running experiment", 0)
         for epoch_i in range(10):
             # log text whenever you want
@@ -60,7 +62,7 @@ def build_and_train(affinity_code, log_dir, run_ID, **kwargs):
 
             # dump all logs into csv file (This is the exact function that
             # write all data into progress.csv file, by default)
-            logger.dump_scalar()
+            logger.dump_data()
 
             # You can log images or gifs
             image = (np.random.random((3, 50, 50)) * 256).astype(np.uint8)
