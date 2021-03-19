@@ -155,13 +155,13 @@ class Logger():
         if not self.tb_writer is None:
             self.tb_writer.add_text("text", out, step)
 
-    def log_scalar(self, tag, data, step= None, filename= None, with_prefix= True, **kwargs):
+    def log_scalar(self, tag, data, step, filename= None, with_prefix= True, **kwargs):
         """
         @Args:
             tag: string;
             data: a number (not array)
-            step: a int of the iteration number. If `filename` provided, 
-                you need to give proper `step` of current `filename`
+            step: a int of the iteration number (starting from 0). If `filename` provided, 
+                you need to give proper `step` of current `filename` and increment one by one.
         """
         if filename is None: filename = self._scalar_default_file
         if with_prefix:
@@ -169,7 +169,11 @@ class Logger():
                 tag = p + tag
         # maintain pandas DataFrame
         df_len = len(self._scalar_data[filename])
-        if step is None: step = df_len - 1
+        if step > (df_len - 1):
+            for _ in range(step - df_len + 1):
+                self._scalar_data[filename] = self._scalar_data[filename].append({}, ignore_index= True)
+            if step > 1:
+                print(colorize("You might forget to dump_scalar on a regular basis, this might cause the scalar data lost", color= "yellow"))
         if not tag in self._scalar_data[filename]:
             self._scalar_data[filename][tag] = np.nan
         try:
