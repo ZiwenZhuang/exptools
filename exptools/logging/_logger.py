@@ -68,11 +68,21 @@ class Logger():
         self._text_prefix.append(prefix)
     def pop_text_prefix(self):
         self._text_prefix.pop(-1)
-    
+    @contextmanager
+    def text_prefix(self, prefix: str):
+        self.push_text_prefix(prefix)
+        yield
+        self.pop_text_prefix()
+        
     def push_scalar_prefix(self, prefix: str):
         self._scalar_prefix.append(prefix)
     def pop_scalar_prefix(self):
         self._scalar_prefix.pop(-1)
+    @contextmanager
+    def scalar_prefix(self, prefix: str):
+        self.push_scalar_prefix(prefix)
+        yield
+        self.pop_scalar_prefix()
 
     def push_prefix(self, prefix: str):
         self.push_text_prefix(prefix)
