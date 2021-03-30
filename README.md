@@ -1,5 +1,5 @@
 # Exptools
-<img align="right" width="360" height="180" src="figures/showcase.jpg">
+<img align="right" width="180" height="180" src="figures/logo.png">
 
 A unified experiment deploy, logging, visualizatoin, comparsion tool (based on Tensorboard)
 
@@ -17,13 +17,19 @@ A unified experiment deploy, logging, visualizatoin, comparsion tool (based on T
 - If you want to use it as your project module. In other words, you want to use it as a product.
 
     ```bash
+    git clone https://github.com/ziwenzhuang/exptools
     cd ${this_project_path}
     python setup.py install
+    ```
+    or
+    ```bash
+    pip install git+git://github.com/ziwenzhuang/exptools
     ```
 
 - If you want to install it and keep on developing the repository. In other words, you want to develop it.
 
     ```bash
+    git clone https://github.com/ziwenzhuang/exptools
     cd ${this_project_path}
     pip install -e .
     ```
