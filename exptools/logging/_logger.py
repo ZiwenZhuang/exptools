@@ -68,7 +68,7 @@ class Logger():
         self._text_prefix.append(prefix)
     def pop_text_prefix(self):
         self._text_prefix.pop(-1)
-        
+    
     def push_scalar_prefix(self, prefix: str):
         self._scalar_prefix.append(prefix)
     def pop_scalar_prefix(self):
@@ -308,6 +308,9 @@ class Logger():
         self.default_step += 1
         self.dump_scalar()
 
+    def set_step(self, step):
+        self.default_step = step
+
     def __del__(self):
         try:
             for _, v in self._text_files.items():
@@ -334,15 +337,20 @@ class Logger():
             return self.tb_writer
         else:
             super(Logger, self).__getattr__(self, name)
+    @contextmanager
+    def tabular_prefix(self, key):
+        self.push_text_prefix(key)
+        yield
+        self.pop_text_prefix()
     def record_tabular(self, key, val, step= None):
         self._deprecated_warn()
         return self.log_scalar(key, val, step)
     def record_tabular_misc_stat(self, key, val, step= None):
         self._deprecated_warn()
         return self.log_scalar_batch(key, val, step)
-    def dump_tabular(self):
+    def dump_tabular(self, *args, **kwargs):
         self._deprecated_warn()
-        return self.dump_scalar()
+        return self.dump_data()
     def log(self, data, step= 0, *args, **kwargs):
         self._deprecated_warn()
         return self.log_text(data, step)
@@ -352,6 +360,27 @@ class Logger():
     def record_gif(self, *args, **kwargs):
         self._deprecated_warn()
         return self.log_gif(*args, **kwargs)
+    def set_iteration(self, itr):
+        self._deprecated_warn()
+        return self.set_step(itr)
+    def set_snapshot_dir(self, *args):
+        self._deprecated_warn()
+    def get_snapshot_dir(self):
+        self._deprecated_warn()
+        return self.log_dir
+    def set_snapshot_mode(self, mode):
+        self._deprecated_warn()
+        self._snapshot_mode = mode
+    def get_snapshot_mode(self):
+        self._deprecated_warn()
+        return self._snapshot_mode
+    def set_log_tabular_only(self, mode):
+        self._deprecated_warn()
+    def set_tf_summary_writter(self, *args, **kwargs):
+        self._deprecated_warn()
+    def save_itr_params(self, *args, **kwargs):
+        self._deprecated_warn()
+
     
         
     

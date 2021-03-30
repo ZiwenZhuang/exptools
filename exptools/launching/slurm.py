@@ -105,9 +105,9 @@ def make_sbatch_script(
     sbatch_string += "\n"
     sbatch_string += " ".join(call_command)
 
-    with open(path.join(log_dir, "{}.slurm".format(script_name)), 'w') as f:
+    with open(path.join(log_dir, "{}_{}.slurm".format(script_name, run_ID)), 'w') as f:
         f.write(sbatch_string)
-    return path.join(log_dir, "{}.slurm".format(script_name))
+    return path.join(log_dir, "{}_{}.slurm".format(script_name, run_ID))
 
 
 """
