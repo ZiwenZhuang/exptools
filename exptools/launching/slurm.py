@@ -7,7 +7,8 @@ from collections import namedtuple
 
 # for the safe of usage please build it using kwargs
 SlurmResource = namedtuple("SlurmResource", [
-    "mem", "time", "n_gpus", "partition", "cuda_module", "singularity_img", "exclude"
+    "mem", "time", "n_gpus", "partition", "cuda_module", "singularity_img", "exclude",
+    "cmd_prefix", "other_modules"
 ])
 def build_slurm_resource(
         mem: str= "12G",
@@ -17,6 +18,8 @@ def build_slurm_resource(
         cuda_module: str= None,
         singularity_img: str= None,
         exclude: str= None,
+        cmd_prefix: str= None,
+        other_modules: list= None, # a sequence of str
     ):
     """
     Specifying slurm resources refering to https://slurm.schedmd.com/sbatch.html
@@ -30,9 +33,13 @@ def build_slurm_resource(
             clusters.
         time: a string with "hh:mm:ss" format telling the running time limit, or "d-hh:mm:ss" for 
             longer time limit.
+        cmd_prefix: a string which gives you the flexibility to load what you want. It will be put
+            between `#SBATCH` command and `module load` command.
+        other_modules: a list of string, which will only be added as `module load ...` into script
     """
     return SlurmResource(mem=mem, time= time, n_gpus=n_gpus, partition= partition,
         cuda_module=cuda_module, singularity_img=singularity_img, exclude=exclude,
+        cmd_prefix= cmd_prefix, other_modules= other_modules,
     )
 
 sbatch_template = """#!/usr/bin/env bash
@@ -51,7 +58,8 @@ def make_sbatch_script(
         slurm_resource: SlurmResource
     ):
     """ based on resources specification (for each run), generae one slurm script and write script
-    into {log_dir}/run_exp.slurm for you to call
+    into {log_dir}/run_exp.slurm for you to call. The slurm script will be composed as a series of 
+    `#SBATCH` command and a series `module load` command, then the python command at last.
         The default value for resources referring to SlurmResource
     Returns:
         scriptname: the file name of the script to run this experiment. This is absolute path
@@ -71,20 +79,30 @@ def make_sbatch_script(
     if slurm_resource.n_gpus > 0:
         assert slurm_resource.cuda_module is not None, "You want to use GPU but did not provide cuda module"
         sbatch_string += "\n#SBATCH --gres=gpu:{}".format(slurm_resource.n_gpus)
+
+    ###### Load a `cmd_prefix` for the flexibility of Slurm usage ######
+    if slurm_resource.cmd_prefix is not None:
+        sbatch_string += "\n"
+        sbatch_string += slurm_resource.cmd_prefix
+        sbatch_string += "\n"
     
     ###### Done requesting resources, start loading module strings ######
     if slurm_resource.cuda_module is not None:
         sbatch_string += "\nmodule load {}".format(slurm_resource.cuda_module)
+
+    if slurm_resource.other_modules is not None:
+        for mod in slurm_resource.other_modules:
+            sbatch_string += "\nmodule load " + mod
 
     if slurm_resource.singularity_img is not None:
         sbatch_string += "\nmodule load singularity"
         sbatch_string += "\nsingularity exec{nv} {img} ".format(
             nv= " --nv" if slurm_resource.n_gpus > 0 else "",
             img= slurm_resource.singularity_img,
-        )
-    else:
-        sbatch_string += "\n"
+        )    
+
     # now is time to add call_command as the last piece of the script
+    sbatch_string += "\n"
     sbatch_string += " ".join(call_command)
 
     with open(path.join(log_dir, "{}.slurm".format(script_name)), 'w') as f:
