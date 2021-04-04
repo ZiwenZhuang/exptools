@@ -317,6 +317,8 @@ class Logger():
         """
         self.default_step += 1
         self.dump_scalar()
+    def dump(self):
+        return self.dump_data()
 
     def set_step(self, step):
         self.default_step = step

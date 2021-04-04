@@ -9,7 +9,7 @@ import csv
 
 from exptools.logging import logger, Logger
 from exptools.logging.console import colorize
-from exptools.launching.variant import VARIANT
+from exptools.launching.variant import VARIANT, flatten_variant4hparams, save_variant
 
 # NOTE: you have to run your python command at your project root directory \
 # (the parent directory of your 'data' directory)
@@ -52,6 +52,21 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none",
     logger.add_scalar_output(SCALAR_LOG_FILE)
     logger.push_text_prefix(f"{name}_{run_ID} ")
     print(colorize("Program started, working on...", color= "green"))
+
+    # save params into this experiment directory
+    if log_params is None:
+        log_params = dict()
+    log_params["name"] = name
+    log_params["run_ID"] = run_ID
+    save_variant(log_params, exp_dir)
+    if logger.tb_writer is not None:
+        flat_params = flatten_variant4hparams(deepcopy(log_params))
+        logger.tb_writer.add_hparams(
+            dict(**flat_params),
+            dict(z_dummy_metric= 0.0),
+            name= "./",
+        )
+    
 
     yield
 
