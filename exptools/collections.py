@@ -183,6 +183,9 @@ def is_namedarraytuple(obj):
     Returns False if obj is namedtuple."""
     return is_namedarraytuple_class(type(obj))
 
+def is_named_array_tuple(obj):
+    return is_namedarraytuple(obj) or is_namedtuple(obj)
+
 
 def namedarraytuple_like(namedtuple_or_class, classname_suffix=False):
     """Returns namedarraytuple class with same name and fields as input
