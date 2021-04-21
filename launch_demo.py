@@ -2,8 +2,7 @@
     NOTE: By running this demo, it will create a `data` directory from where you run it.
 '''
 from exptools.launching.variant import VariantLevel, make_variants, update_config
-from exptools.launching.affinity import encode_affinity, quick_affinity_code
-from exptools.launching.exp_launcher import run_experiments
+from exptools.launching.exp_launcher import run_experiments, run_on_cluster
 
 default_config = dict(
     optionA = dict(
@@ -50,7 +49,6 @@ def main(args):
 
     if args.where == "local":
         from exptools.launching.affinity import encode_affinity, quick_affinity_code
-        from exptools.launching.exp_launcher import run_experiments
         # NOTE: you can use quick_affinity_code for simplicity
         affinity_code = encode_affinity(
             n_cpu_core= 12,
@@ -66,19 +64,28 @@ def main(args):
             log_dirs= log_dirs,
             debug_mode= args.debug, # if greater than 0, the launcher will run one variant in this process)
         )
-    elif args.where == "slurm":
-        from exptools.launching.slurm import build_slurm_resource
-        from exptools.launching.exp_launcher import run_on_slurm
-        slurm_resource = build_slurm_resource(
-            mem= "16G",
-            time= "3-12:00:00",
-            n_gpus= 1,
-            partition= "",
-            cuda_module= "cuda-10.0",
-        )
-        run_on_slurm(
+    else:
+        if args.where == "slurm":
+            from exptools.launching.cluster.slurm import SlurmHandler
+            cluster_handler = SlurmHandler(
+                mem= "16G",
+                time= "3-12:00:00",
+                n_gpus= 1,
+                partition= "",
+                cuda_module= "cuda-10.0",
+            )
+        elif args.where == "pbs":
+            from exptools.launching.cluster.pbs import PbsHandler
+            cluster_handler = PbsHandler(
+                mem= "16G",
+                walltime= "7200:00:00",
+                n_gpus= 1,
+                destination_queue= "gpu1",
+                cmd_prefix= None,
+            )
+        run_on_cluster(
             script= "demo.py",
-            slurm_resource= slurm_resource,
+            cluster_handler= cluster_handler,
             experiment_title= experiment_title + ("--debug" if args.debug else ""),
             # experiment_title= "temp_test" + ("--debug" if args.debug else ""),
             script_name= experiment_title,
@@ -99,7 +106,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--where', help= 'slurm or local',
         type= str, default= "local",
-        choices= ["slurm", "local"],
+        choices= ["pbs", "slurm", "local"],
     )
 
     args = parser.parse_args()

@@ -1,4 +1,5 @@
 
+from exptools.launching.cluster import ClusterHandlerBase
 import subprocess
 import datetime
 import time
@@ -11,7 +12,8 @@ from exptools.launching.affinity import get_n_run_slots, prepend_run_slot, affin
 from exptools.logging.context import get_log_dir, SLURM_EXP
 from exptools.launching.variant import save_variant
 
-from exptools.launching.slurm import SlurmResource, make_sbatch_script, slurm_debug_command
+from exptools.launching.cluster.slurm import SlurmResource, make_sbatch_script, slurm_debug_command
+from exptools.launching.cluster.pbs import PbsResource, make_qsub_script
 
 
 def log_exps_tree(exp_dir, log_dirs, runs_per_setting):
@@ -157,19 +159,21 @@ def run_experiments(script, affinity_code, experiment_title, runs_per_setting,
         if p is not None:
             p.wait()  # Don't return until they are all done.
 
-def run_on_slurm(script: str, slurm_resource: SlurmResource, experiment_title: str,
-        runs_per_setting: int, variants, log_dirs,
+def run_on_cluster(script: str,
+        cluster_handler: ClusterHandlerBase,
+        experiment_title: str,
+        runs_per_setting: int,
+        variants, log_dirs,
         script_name: str= None,
         common_args= None, runs_args= None, debug_mode= 0
     ):
     """ A interface connecting PySbatch and this exptools. All stdout of the experiment will be
     direct to log_dirs (the parent of 'run_ID') named as 'run_ID.stdout'
     @ Args:
-        exclude: a string specifying the nodes you want to exclude, might be different depend on
-            clusters.
+        cluster_handler: instance of subclass of ClusterHandlerBase
         debug_mode: 0 - no debugging; NOTE: did not support later debugging
     """
-    exp_dir = get_log_dir(experiment_title, exp_machine= SLURM_EXP)
+    exp_dir = get_log_dir(experiment_title, exp_machine= cluster_handler.cluster_manager_name)
     assert len(variants) == len(log_dirs)
     if runs_args is None:
         runs_args = [()] * len(variants)
@@ -180,26 +184,25 @@ def run_on_slurm(script: str, slurm_resource: SlurmResource, experiment_title: s
     # start deploying experiments
     for run_ID in range(runs_per_setting):
         if debug_mode > 0:
-            raise RuntimeError("It has been tested that slurm job cannot be used to remote debug, see comments for further details.")
+            raise RuntimeError("It has been tested that cluster job cannot be used to remote debug, see comments for further details.")
             """
             The trial is done using ptvsd and trying to listen to external port. But the local 
             computer cannot connect to the script.
             Maybe need a ssh forwarding from the administrator node.
             """
         else:
-            # common case, deploy experiments as slurm jobs one by one
+            # common case, deploy experiments as cluster jobs one by one
             for variant, log_dir, run_args in zip(variants, log_dirs, runs_args):
                 log_dir = osp.join(exp_dir, log_dir)
                 os.makedirs(log_dir, exist_ok=True)
                 save_variant(variant, log_dir)
-                call_command = make_call_command(script, "slurm", log_dir, run_ID, common_args + run_args)
-                slurm_script = make_sbatch_script(
+                call_command = make_call_command(script, cluster_handler.affinity_code, log_dir, run_ID, common_args + run_args)
+                cluster_script = cluster_handler.make_script(
                     log_dir= log_dir,
                     script_name= experiment_title if script_name is None else script_name,
                     run_ID= run_ID,
                     call_command= call_command,
-                    slurm_resource= slurm_resource,
                 )
                 # TODO: acquiree job id after calling sbatch
-                os.system("sbatch " + slurm_script)
-                print("sbatch deploy on command: \n\t" + " ".join(call_command))
+                os.system(" ".joint([cluster_handler.call_script_cmd, cluster_script]))
+                print(cluster_handler.call_script_cmd + " deploy on command: \n\t" + " ".join(call_command))
