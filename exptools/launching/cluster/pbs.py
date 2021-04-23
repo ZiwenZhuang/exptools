@@ -57,7 +57,7 @@ class PbsHandler(ClusterHandlerBase):
 
         # now is time to add call_command and the last piece of the script
         qsub_string += "\n"
-        qsub_string += " ".joint(call_command)
+        qsub_string += " ".join(call_command)
 
         with open(path.join(log_dir, "{}_{}.qsub".format(script_name, run_ID)), "w") as f:
             f.write(qsub_string)

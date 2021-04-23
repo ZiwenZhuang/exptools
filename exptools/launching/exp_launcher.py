@@ -9,12 +9,8 @@ import random
 import importlib.util
 
 from exptools.launching.affinity import get_n_run_slots, prepend_run_slot, affinity_from_code
-from exptools.logging.context import get_log_dir, SLURM_EXP
+from exptools.logging.context import get_log_dir
 from exptools.launching.variant import save_variant
-
-from exptools.launching.cluster.slurm import SlurmResource, make_sbatch_script, slurm_debug_command
-from exptools.launching.cluster.pbs import PbsResource, make_qsub_script
-
 
 def log_exps_tree(exp_dir, log_dirs, runs_per_setting):
     """ write the experiment process ID and their log_dir names
@@ -204,5 +200,5 @@ def run_on_cluster(script: str,
                     call_command= call_command,
                 )
                 # TODO: acquiree job id after calling sbatch
-                os.system(" ".joint([cluster_handler.call_script_cmd, cluster_script]))
+                os.system(" ".join([cluster_handler.call_script_cmd, cluster_script]))
                 print(cluster_handler.call_script_cmd + " deploy on command: \n\t" + " ".join(call_command))

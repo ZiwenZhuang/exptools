@@ -62,7 +62,7 @@ def quick_affinity_code(n_parallel=None, use_gpu=True, contexts_per_gpu= 1):
             cpu_per_run=cpu_per_run)
 
 def full_resource_affinity():
-    """ In order to cooperate with slurm, assuming all resources it sees are assigned to this
+    """ In order to cooperate with cluster manager, assuming all resources it sees are assigned to this
     run of experiment.
     """
     import psutil
@@ -141,7 +141,7 @@ def prepend_run_slot(run_slot, affinity_code):
 def affinity_from_code(run_slot_affinity_code):
     """Use in individual experiment script; pass output to Runner."""
     if run_slot_affinity_code == ClusterHandlerBase.affinity_code:
-        # to support slurm acquire all resources this job can access
+        # to support cluster manager acquire all resources this job can access
         return full_resource_affinity()
     run_slot, aff_code = remove_run_slot(run_slot_affinity_code)
     aff_params = decode_affinity(aff_code)

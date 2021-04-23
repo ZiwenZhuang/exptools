@@ -19,7 +19,6 @@ TEXT_LOG_FILE = "debug.log"
 PARAMS_LOG_FILE = VARIANT
 
 LOCAL_EXP = "local"
-SLURM_EXP = "slurm"
 
 def get_log_dir(experiment_name, exp_machine= LOCAL_EXP):
     """ return string of "${ProjectPATH}/data/{exp_machine}/${date}/{experiment_name}/"
