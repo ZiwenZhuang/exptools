@@ -6,6 +6,8 @@ import pandas as pd
 import itertools
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
+from contextlib import redirect_stderr
+from os import devnull
 
 from exptools.launching.variant import flatten_variant4hparams
 
@@ -214,19 +216,27 @@ class PaperCurvePlotter:
 				try:
 					df = pd.read_csv(f)
 					all_runs.append(df[y])
-					nframes = list(range(len(df[y]))) if x is None else df[x]
+					nframes = np.arange(len(df[y])) if x is None else df[x]
 				except:
 					print("Exception while reading file ", sys.exc_info()[0], path)
 
 		if len(all_runs) == 0: return
 
 		color = self.color_map[label]
-		alpha = 1 if len(paths) == 0 else 0.75
+		alpha = 1 if len(paths) == 1 else 0.75
 
-		min_length = min([len(run) for run in all_runs])
-		all_runs = np.asarray([run[:min_length] for run in all_runs])
-		mean_run = np.mean(all_runs, axis= 0)
-		nframes = nframes[:min_length]
+		with open(devnull, "w") as fnull:
+			with redirect_stderr(fnull):
+				min_length = min([len(run) for run in all_runs])
+				all_runs = np.asarray([run[:min_length] for run in all_runs])
+				mean_run = np.nanmean(all_runs, axis= 0)
+				nframes = nframes[:min_length]
+
+		# rullout nan data
+		non_nan = ~np.isnan(mean_run)
+		all_runs = all_runs[:, non_nan]
+		mean_run = mean_run[non_nan]
+		nframes = nframes[non_nan]
 
 		if not label in self.marked_labels:
 			self.marked_labels.append(label)
