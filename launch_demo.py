@@ -51,9 +51,9 @@ def main(args):
         from exptools.launching.affinity import encode_affinity, quick_affinity_code
         # NOTE: you can use quick_affinity_code for simplicity
         affinity_code = encode_affinity(
-            n_cpu_core= 12,
-            n_gpu= 4,
-            contexts_per_gpu= 3,
+            n_cpu_core= 2,
+            n_gpu= 0,
+            contexts_per_gpu= 1,
         )
         run_experiments(
             script= "demo.py",

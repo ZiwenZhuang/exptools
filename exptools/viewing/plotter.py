@@ -2,6 +2,7 @@
 """
 import os, sys, json
 import numpy as np
+from numpy.lib.arraysetops import isin
 import pandas as pd
 import itertools
 import matplotlib.pyplot as plt
@@ -29,10 +30,6 @@ class PaperCurvePlotter:
 	def __init__(self, exp_paths,
 			log_filename= "progress.csv",
 			param_filename= "variant_config.json",
-			n_fig_a_row= 4, one_fig_size= (5, 5),
-			fontsize= 18, fig_name_shorten_level= 0,
-			x_lim: tuple= (-5*1e6, 50*1e6), y_lim: tuple=(0.0, 1e3),
-			show_legend= False,
 		):
 		"""
 		@ Args:
@@ -44,13 +41,6 @@ class PaperCurvePlotter:
 		self.exp_paths = exp_paths
 		self.log_filename = log_filename
 		self.param_filename = param_filename
-		self.n_fig_a_row = n_fig_a_row
-		self.one_fig_size = one_fig_size
-		self.fontsize = fontsize
-		self.x_lim = x_lim
-		self.y_lim = y_lim
-		self.fig_name_shorten_level = fig_name_shorten_level
-		self.show_legend = show_legend
 		self.color_map = dict()
 		self.df = pd.DataFrame()
 		
@@ -76,7 +66,14 @@ class PaperCurvePlotter:
 
 	def make_plots(self, args_in_figures, args_in_series, x_key, y_key,
 			xlabel= None, ylabel= None, margins= (1, 1, 1, 1),
-			sci_lim= (1, 1),
+			x_lim: tuple= (-5*1e6, 50*1e6),
+			y_lim: tuple=(0.0, 1e3),
+			sci_lim: tuple= None,
+			n_fig_a_row= 4,
+			one_fig_size= (5, 5),
+			fontsize= 18,
+			fig_name_shorten_level= 0,
+			show_legend= False,
 		):
 		""" The main entrance ploting all experiments by design. The two arguments are specifying
 		what experiments you want to plot. Both of them are dictionaries, whose keys are param keys
@@ -90,12 +87,21 @@ class PaperCurvePlotter:
 			margins: a tuple of 4 margin in inches, in the order of (top, bottom, left, right)
 			sci_lim: tuple(int, int) demote the scientific notation of x and y, (exponent of 10)
 		"""
+		self.n_fig_a_row = n_fig_a_row
+		self.one_fig_size = one_fig_size
+		self.fontsize = fontsize
+		self.x_lim = x_lim
+		self.y_lim = y_lim
+		self.fig_name_shorten_level = fig_name_shorten_level
+		self.show_legend = show_legend
+
 		self.marked_labels = []
 
 		n_figures = 1
 		figure_keys, figure_all_options = [], []
 		for key, options in args_in_figures.items():
 			# options: list
+			# find all args which is assigned as None, and seperate them
 			if options is None:
 				options = [*(self.df[key].unique())]
 			n_figures *= len(options)
@@ -251,3 +257,46 @@ class PaperCurvePlotter:
 				alpha= 0.2, linewidth= 0.0, color= color
 			)
 	
+	def get_curves(self, configs: dict, x_key, y_key):
+		""" This method will return all experiments that match the configs will be collected and returned.
+		Args
+			configs: a dict whose key is a string, value is a list of config values
+		Return
+			a list of tuple
+				(0): each combination of configs (specified by configs)
+				(1): a list of all experiment's values (who satisfies the configs specification)
+					(n): the value of this experiment (specified by x_key and y_kay, shape (2, .)
+		"""
+
+		# fill all configs which is assigned as None, and seperate them
+		for key, options in configs.items():
+			assert isinstance(options, list) or options is None, "You must provide a list of options you want, or simply None"
+			if options is None:
+				configs[key] = [*(self.df[key].unique())]
+		keys = list(configs.keys())
+		all_options = list(configs.values()) # a list of options (list)
+
+		return_ = []
+		for i, all_option in enumerate(itertools.product(*all_options)):
+			# all_option is a list of experiment value
+			df = self.df
+			for key, option in zip(keys, all_option):
+				df = df.loc[df[key] == option]
+			data_paths = df["experiment_log_path"]
+			data = []
+			for path in data_paths:
+				with open(os.path.join(path, self.log_filename), "r") as f:
+					try:
+						experiment_data = pd.read_csv(f)
+						y_values = experiment_data[y_key]
+						if x_key is None: x_values = np.arange(len(experiment_data[y_key]))
+						else: x_values = experiment_data[x_key]
+						xy_data = np.stack([x_values, y_values], axis= 0) # (2, .)
+						data.append(xy_data)
+					except:
+						print("Exception while reading file ", sys.exc_info()[0], path)
+			return_.append((
+				dict(zip(keys, all_option)), # dict
+				data, # list
+			))
+		return return_

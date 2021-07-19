@@ -6,7 +6,7 @@ import json
 import itertools
 
 from exptools.launching.variant import VARIANT
-from exptools.logging.context import PARAMS_LOG_FILE, TABULAR_FILE, TEXT_LOG_FILE
+from exptools.logging.context import PARAMS_LOG_FILE, SCALAR_LOG_FILE, TEXT_LOG_FILE
 
 class AttrDict(dict):
     def __init__(self, *args, **kwargs):
@@ -101,7 +101,7 @@ def lookup(d, keys):
 
 def load_exps_data(
         exp_folder_paths,
-        data_filename=TABULAR_FILE,
+        data_filename=SCALAR_LOG_FILE,
         params_filename=PARAMS_LOG_FILE,
         disable_variant=False,
 ):

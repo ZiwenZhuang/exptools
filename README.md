@@ -144,6 +144,7 @@ You can see demo from `launch_demo.py` and `demo.py`
             elif args.where == "pbs":
                 from exptools.launching.cluster.pbs import PbsHandler
                 cluster_handler = PbsHandler(
+                    n_cpus= 16,
                     mem= "16G",
                     walltime= "7200:00:00",
                     n_gpus= 1,
