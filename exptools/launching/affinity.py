@@ -266,7 +266,8 @@ def build_gpu_affinity(slt, gpu, cpu, cxg=1, cpw=1, hto=None, res=0, skt=1,
     if cxg > 1:
         slt = (slt % gpu) * cxg + slt // gpu  # Spread over GPUs first.
     affinity = build_cpu_affinity(slt, cpu, cpr, cpw, hto, res, skt, alt, saf)
-    affinity["cuda_idx"] = slt // cxg
+    affinity["cuda_idx"] = slt // cxg if os.environ.get("CUDA_VISIBLE_DEVICES", None) is None \
+        else os.environ["CUDA_VISIBLE_DEVICES"].split(",")[slt // cxg]
     return affinity
 
 
