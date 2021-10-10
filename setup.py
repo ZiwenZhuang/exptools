@@ -12,7 +12,7 @@ basic_install_requires = [
     "pandas",
     "imageio",
 ]
-ver_num = "2.0.3"
+ver_num = "2.0.4"
 
 tfb_requires = ["tensorboard", "tensorboardX", "crc32c", "soundfile"]
 

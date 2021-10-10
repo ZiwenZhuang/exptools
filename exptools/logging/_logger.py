@@ -31,8 +31,9 @@ class Logger():
     """
     def __init__(self,
             log_dir, # The abspath of where all log files are put
-            refresh= True, # if you don't want to resume your experiment, this will remove everything in log_dir
+            refresh= False, # if you don't want to resume your experiment, this will remove everything in log_dir
         ):
+        self.refresh = refresh
         self.log_dir = osp.abspath(log_dir)
         mkdir_p(self.log_dir)
         self.mp_lock = threading.Lock()
@@ -61,6 +62,9 @@ class Logger():
         self._scalar_prefix = [] # a stack to set prefix
         self._scalar_data = {} # a dict of {filename:pandas_dataframe}
         self._scalar_default_file = None
+        
+        self._image_prefix = []
+        self._gif_prefix = []
 
         self.default_step = 0
 
@@ -83,13 +87,43 @@ class Logger():
         self.push_scalar_prefix(prefix)
         yield
         self.pop_scalar_prefix()
+        
+    def push_image_prefix(self, prefix: str):
+        self._image_prefix.append(prefix)
+    def pop_image_prefix(self):
+        self._image_prefix.pop(-1)
+    @contextmanager
+    def image_prefix(self, prefix: str):
+        self.push_image_prefix(prefix)
+        yield
+        self.pop_image_prefix()
+        
+    def push_gif_prefix(self, prefix: str):
+        self._gif_prefix.append(prefix)
+    def pop_gif_prefix(self):
+        self._gif_prefix.pop(-1)
+    @contextmanager
+    def gif_prefix(self, prefix: str):
+        self.push_gif_prefix(prefix)
+        yield
+        self.pop_gif_prefix()
 
     def push_prefix(self, prefix: str):
         self.push_text_prefix(prefix)
         self.push_scalar_prefix(prefix)
+        self.push_image_prefix(prefix)
+        self.push_gif_prefix(prefix)
     def pop_prefix(self):
         self.pop_text_prefix()
         self.pop_scalar_prefix()
+        self.pop_image_prefix()
+        self.pop_gif_prefix()
+    @contextmanager
+    def prefix(self, prefix: str):
+        """ All modality prefix """
+        self.push_prefix(prefix)
+        yield
+        self.pop_prefix()
 
     def add_text_output(self, filename: str):
         if not self._text_default_file:
@@ -125,7 +159,10 @@ class Logger():
     def add_scalar_output(self, filename: str):
         if not self._scalar_default_file:
             self._scalar_default_file = filename
-        self._scalar_data[filename] = pd.DataFrame().append({}, ignore_index= True)
+        if not self.refresh and osp.isfile(osp.join(self.log_dir, filename)):
+            self._scalar_data[filename] = pd.read_csv(osp.join(self.log_dir, filename))
+        else:
+            self._scalar_data[filename] = pd.DataFrame().append({}, ignore_index= True)
     def remove_scalar_output(self, filename= None):
         if filename is None: filename = self._scalar_default_file
         if filename == self._scalar_default_file:
@@ -286,12 +323,15 @@ class Logger():
         for k in self._scalar_current_data[filename].keys():
             self._scalar_current_data[filename][k] = np.nan
     
-    def log_image(self, tag, data, step= None, **kwargs):
+    def log_image(self, tag, data, step= None, with_prefix= True, **kwargs):
         """ NOTE: data must be (H, W) or (3, H, W) or (4, H, W) from 0-255 uint8
         """
         mkdir_p(osp.join(self.log_dir, "image"))
-        filename = osp.join(self.log_dir, "image", "{}-{}.png".format(tag, step))
+        if with_prefix:
+            for p in self._image_prefix:
+                tag = p + tag
         if step is None: step = self.default_step
+        filename = osp.join(self.log_dir, "image", "{}-{}.png".format(tag, step))
         if len(data.shape) == 3:
             imageio.imwrite(filename, np.transpose(data, (1,2,0)), format= "PNG")
         else:
@@ -299,13 +339,16 @@ class Logger():
         if not self.tb_writer is None:
             self.tb_writer.add_image(tag, data, step)
 
-    def log_gif(self, tag, data, step= None, duration= 0.1, **kwargs):
+    def log_gif(self, tag, data, step= None, duration= 0.1, with_prefix= True, **kwargs):
         """ record a series of image as gif into file
         NOTE: data must be a sequence of nparray (H, W) or (3, H, W) or (4, H, W) from 0-255 uint8
         """
         mkdir_p(osp.join(self.log_dir, "gif"))
-        filename = osp.join(self.log_dir, "gif", "{}-{}.gif".format(tag, step))
+        if with_prefix:
+            for p in self._gif_prefix:
+                tag = p + tag
         if step is None: step = self.default_step
+        filename = osp.join(self.log_dir, "gif", "{}-{}.gif".format(tag, step))
         if isinstance(data, np.ndarray) or (len(data) > 0 and len(data[0].shape)) == 3:
             imageio.mimwrite(filename, [np.transpose(d, (1,2,0)) for d in data], format= "GIF", duration= duration)
         else:
@@ -351,9 +394,9 @@ class Logger():
             super(Logger, self).__getattr__(self, name)
     @contextmanager
     def tabular_prefix(self, key):
-        self.push_text_prefix(key)
+        self.push_scalar_prefix(key)
         yield
-        self.pop_text_prefix()
+        self.pop_scalar_prefix()
     def record_tabular(self, key, val, step= None):
         self._deprecated_warn()
         return self.log_scalar(key, val, step)

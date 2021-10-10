@@ -28,7 +28,7 @@ def get_log_dir(experiment_name, exp_machine= LOCAL_EXP):
     return log_dir
 
 @contextmanager
-def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none", itr_i= 0):
+def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none", itr_i= 0, refresh= False):
     """ setup the context for one experiment with these parameters.
         And save experiment parameters through 'log_params' as you need. \\
         NOTE: This will look for `data` folder under the directory you run python.
@@ -45,7 +45,7 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none",
         ))
         exp_dir = get_log_dir(log_dir)
 
-    logger.set_client(Logger(exp_dir))
+    logger.set_client(Logger(exp_dir, refresh= refresh))
 
     logger.add_text_output(TEXT_LOG_FILE)
     logger.add_scalar_output(SCALAR_LOG_FILE)
