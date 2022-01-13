@@ -2,6 +2,7 @@
 A resources-specifying interface for using slurm
 """
 from exptools.launching.cluster import ClusterHandlerBase
+from exptools.logging.console import colorize
 import os
 from os import path
 from collections import namedtuple
@@ -82,7 +83,11 @@ class SlurmHandler(ClusterHandlerBase):
         if not self.exclude is None:
             sbatch_string += "\n#SBATCH --exclude={}".format(self.exclude)
         if self.n_gpus > 0:
-            assert self.cuda_module is not None, "You want to use GPU but did not provide cuda module"
+            if self.cuda_module is None:
+                print(colorize(
+                    "Warning: You want to use GPU but did not provide cuda module",
+                    "yellow",
+                ))
             sbatch_string += "\n#SBATCH --gres=gpu:{}".format(self.n_gpus)
 
         ###### Load a `cmd_prefix` for the flexibility of Slurm usage ######

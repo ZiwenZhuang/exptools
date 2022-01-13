@@ -61,7 +61,7 @@ def quick_affinity_code(n_parallel=None, use_gpu=True, contexts_per_gpu= 1):
         return encode_affinity(n_cpu_core=n_cpu_core, n_gpu=0,
             cpu_per_run=cpu_per_run)
 
-def full_resource_affinity():
+def full_resource_affinity(set_affinity= True):
     """ In order to cooperate with cluster manager, assuming all resources it sees are assigned to this
     run of experiment.
     """
@@ -78,6 +78,7 @@ def full_resource_affinity():
             cpu_per_run= n_cpu_core,
             gpu_per_run= max(1, n_gpu),
             run_slot= 0,
+            set_affinity= set_affinity,
         ))
 
 def encode_affinity(
@@ -145,7 +146,7 @@ def affinity_from_code(run_slot_affinity_code):
     """Use in individual experiment script; pass output to Runner."""
     if run_slot_affinity_code == ClusterHandlerBase.affinity_code:
         # to support cluster manager acquire all resources this job can access
-        return full_resource_affinity()
+        return full_resource_affinity(set_affinity= False)
     run_slot, aff_code = remove_run_slot(run_slot_affinity_code)
     aff_params = decode_affinity(aff_code)
     if aff_params.get(N_GPU, 0) > 0:
