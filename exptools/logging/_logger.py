@@ -205,6 +205,28 @@ class Logger():
         if not self.tb_writer is None:
             self.tb_writer.add_text("text", out, step)
 
+    def log_embedding(self, tag, data, step= None,
+            text_label= None, 
+            image_label= None,
+        ):
+        """ Using tSNE method to visualize embeddings
+        @Args:
+            tag: str, tag name
+            data: np array with shape (N, d)
+            text_label: list[str], len(text_label) == N
+            image_label: np array with shape (N, C, H, W), please check https://tensorboardx.readthedocs.io/en/latest/tensorboard.html#tensorboardX.SummaryWriter.add_embedding
+                for more details
+        """
+        if step is None: step = self.default_step
+        if not self.tb_writer is None:
+            self.tb_writer.add_embedding(
+                mat= data,
+                tag= tag,
+                metadata= text_label,
+                label_img= image_label,
+                global_step= step,
+            )
+
     def log_scalar(self, tag, data, step= None, filename= None, with_prefix= True, **kwargs):
         """
         @Args:
@@ -223,7 +245,8 @@ class Logger():
         if step > (df_len - 1):
             for _ in range(step - df_len + 1):
                 self._scalar_data[filename] = self._scalar_data[filename].append({}, ignore_index= True)
-            if step > 1:
+            if step > 1 and not hasattr(self, "warned_log_scalar"):
+                self.warned_log_scalar = True
                 print(colorize("You might forget to dump_scalar on a regular basis, this might cause the scalar data lost", color= "yellow"))
         if not tag in self._scalar_data[filename]:
             self._scalar_data[filename][tag] = np.nan
@@ -360,6 +383,7 @@ class Logger():
         """
         self.default_step += 1
         self.dump_scalar()
+        if self.tb_writer is not None: self.tb_writer.flush()
     def dump(self):
         return self.dump_data()
 
@@ -385,7 +409,9 @@ class Logger():
 
     # >>>>>>>>> The followings are APIs for other experiment platforms <<<<<<<<
     def _deprecated_warn(self):
-        print(colorize("You are using dereprecated API of exptools logger", color= "yellow"))
+        if not hasattr(self, "warned_deprecated"):
+            self.warned_deprecated = True
+            print(colorize("You are using dereprecated API of exptools logger", color= "yellow"))
     def __getattr__(self, name: str):
         if name == "_tb_writer":
             self._deprecated_warn()

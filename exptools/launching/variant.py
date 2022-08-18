@@ -22,17 +22,22 @@ Parameters
         (to make the log_dir more interpertable)
 '''
 
-def make_variants(*variant_levels):
+def make_variants(*variant_levels, create_subdirs= True):
     """ Given a list of variant_levels, do _cross_variants to generate
     a list of variant conbinations and the sub-directory that they should stay.
+    Args:
+        create_subdirs: if True, each variant will create a subdir. Otherwise, the dir name will be connected by "_"
     """
     variants, log_dirs = [AttrDict()], [""]
     for variant_level in variant_levels:
-        variants, log_dirs = _cross_variants(variants, log_dirs, variant_level)
+        variants, log_dirs = _cross_variants(
+            variants, log_dirs, variant_level,
+            create_subdirs= create_subdirs,
+        )
     return variants, log_dirs
 
 
-def _cross_variants(prev_variants, prev_log_dirs, variant_level):
+def _cross_variants(prev_variants, prev_log_dirs, variant_level, create_subdirs= True):
     """For every previous variant, make all combinations with new values."""
     keys, values, dir_names = variant_level
     assert len(prev_variants) == len(prev_log_dirs)
@@ -45,7 +50,7 @@ def _cross_variants(prev_variants, prev_log_dirs, variant_level):
     for prev_variant, prev_log_dir in zip(prev_variants, prev_log_dirs):
         for vs, n in zip(values, dir_names):
             variant = prev_variant.copy()
-            log_dir = osp.join(prev_log_dir, n)
+            log_dir = osp.join(prev_log_dir, n) if create_subdirs else prev_log_dir + "_" + n
             if log_dir in log_dirs:
                 raise ValueError("Names must be unique.")
             for v, key_path in zip(vs, keys):

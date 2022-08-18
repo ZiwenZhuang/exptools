@@ -20,15 +20,15 @@ import warnings
 WARN_STR = "You have not initialized exptools logger. Please use log_context in exptools.logging.context.logger_context"
 class Proxy:
     def set_client(self, client):
-        self._client = client
+        self.__dict__["_client"] = client
     def unset_client(self):
-        del self._client
+        del self.__dict__["_client"]
     """ NOTE: don' implement __getattribute__ to prevent unlimited recursion
     refer to https://stackoverflow.com/questions/3278077/difference-between-getattr-vs-getattribute
     """
     def __getattr__(self, name: str):
-        if hasattr(self, "_client"):
-            return getattr(self._client, name)
+        if "_client" in self.__dict__:
+            return getattr(self.__dict__.get("_client"), name)
         warnings.warn(WARN_STR)
 
 logger = Proxy()
