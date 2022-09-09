@@ -161,6 +161,8 @@ class Logger():
             self._scalar_default_file = filename
         if not self.refresh and osp.isfile(osp.join(self.log_dir, filename)):
             self._scalar_data[filename] = pd.read_csv(osp.join(self.log_dir, filename))
+            if filename == self._scalar_default_file:
+                self.default_step = self._scalar_data[filename].shape[0] - 1
         else:
             self._scalar_data[filename] = pd.DataFrame().append({}, ignore_index= True)
     def remove_scalar_output(self, filename= None):
@@ -242,6 +244,7 @@ class Logger():
         # maintain pandas DataFrame
         df_len = len(self._scalar_data[filename])
         if step is None: step = self.default_step
+        else: self.default_step = step
         if step > (df_len - 1):
             for _ in range(step - df_len + 1):
                 self._scalar_data[filename] = self._scalar_data[filename].append({}, ignore_index= True)
@@ -278,9 +281,16 @@ class Logger():
         """
         if filename is None: filename = self._scalar_default_file
         
-        self._scalar_data[filename].to_csv(osp.join(self.log_dir, filename), index= False)
+        # dump to a different file first, then override the file incase the machine has failure
+        self._scalar_data[filename].to_csv(osp.join(self.log_dir, "._" + filename), index= False)
+        if osp.isfile(osp.join(self.log_dir, filename)):
+            os.remove(osp.join(self.log_dir, filename))
+        os.rename(
+            osp.join(self.log_dir, "._" + filename),
+            osp.join(self.log_dir, filename),
+        )
         self.log_text("Dumping scalar data for {}".format(filename), len(self._scalar_data[filename]))
-        print(tabulate( self._scalar_data[filename].iloc[-1].items() ))
+        print(tabulate( self._scalar_data[filename].iloc[self.default_step].items() ))
         self._scalar_data[filename] = self._scalar_data[filename].append({}, ignore_index= True)
 
     def __old_dump_scalar(self, filename= None):
@@ -381,9 +391,9 @@ class Logger():
     def dump_data(self):
         """ dump all default data handler, and increase default_step by 1
         """
-        self.default_step += 1
         self.dump_scalar()
         if self.tb_writer is not None: self.tb_writer.flush()
+        self.default_step += 1
     def dump(self):
         return self.dump_data()
 
