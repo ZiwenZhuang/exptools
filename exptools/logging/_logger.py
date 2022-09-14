@@ -275,6 +275,17 @@ class Logger():
             self.log_scalar(tag + "/Min", np.nanmin(data), step, filename, **kwargs)
             self.log_scalar(tag + "/Len", np.count_nonzero(~np.isnan(data)), step, filename, **kwargs)
 
+    def log_histogram(self, tag, data, step= None, with_prefix= True, **kwargs):
+        """ To maintain tag prefix and other 
+        """
+        if not isinstance(data, np.ndarray): data = np.array(data)
+        if step is None: step = self.default_step
+        if with_prefix:
+            for p in self._scalar_prefix:
+                tag = p + tag
+        if not self.tb_writer is None:
+            self.tb_writer.add_histogram(tag, data, step)
+
     def dump_scalar(self, filename= None):
         """ In order to reflect the scalar data to the file and data loss due to program crash
         we write current scalar dataframe to csv file
