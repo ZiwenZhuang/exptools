@@ -3,7 +3,7 @@ from exptools.logging.tabulate import tabulate
 from exptools.logging.console import mkdir_p, colorize
 from exptools.logging.autoargs import get_all_parameters
 import numpy as np
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict, defaultdict, namedtuple
 import os, shutil
 import os.path as osp
 import sys
@@ -22,6 +22,9 @@ except ImportError as e:
     print("TensorboardX is not available in exptools, logging might be limited")
 else:
     _tb_avaliable = True
+
+# data file handler for writing to file descriptor or store to memeory buffer
+DataFile = namedtuple("DataFile", ["fp", "buffer"])
 
 class Logger():
     """ The interface to handle all logging operations (if you are using this library).
@@ -60,7 +63,7 @@ class Logger():
 
         # assuming current scalar data can be handled by cluster memory (otherwise, solve later)
         self._scalar_prefix = [] # a stack to set prefix
-        self._scalar_data = {} # a dict of {filename:pandas_dataframe}
+        self._scalar_files = {} # a dict of {filename:pandas_dataframe}
         self._scalar_default_file = None
         
         self._image_prefix = []
@@ -160,11 +163,25 @@ class Logger():
         if not self._scalar_default_file:
             self._scalar_default_file = filename
         if not self.refresh and osp.isfile(osp.join(self.log_dir, filename)):
-            self._scalar_data[filename] = pd.read_csv(osp.join(self.log_dir, filename))
+            self._scalar_files[filename] = DataFile(
+                fp= open(osp.join(self.log_dir, filename), "a+"),
+                buffer= OrderedDict(),
+            )
+            reader = csv.reader(self._scalar_files[filename].fp)
+            try:
+                old_keys = next(reader)
+            except StopIteration:
+                old_keys = []
+            for key in old_keys:
+                self._scalar_files[filename].buffer[key] = np.nan
             if filename == self._scalar_default_file:
-                self.default_step = self._scalar_data[filename].shape[0] - 1
+                self.default_step = max(0, len(list(reader))) # if reader is not empty, the previous `next()` has already used one line.
+            del reader
         else:
-            self._scalar_data[filename] = pd.DataFrame().append({}, ignore_index= True)
+            self._scalar_files[filename] = DataFile(
+                fp= open(osp.join(self.log_dir, filename), "a+"),
+                buffer= OrderedDict(),
+            )
     def remove_scalar_output(self, filename= None):
         if filename is None: filename = self._scalar_default_file
         if filename == self._scalar_default_file:
@@ -173,8 +190,9 @@ class Logger():
                 color= "yellow",
             ))
             self._scalar_default_file = None
-        self._scalar_data[filename].to_csv(osp.join(self.log_dir, filename), index= False)
-        self._scalar_data.pop(filename)
+        self._scalar_files[filename].fp.flush()
+        self._scalar_files[filename].fp.close()
+        self._scalar_files.pop(filename)
     @contextmanager
     def additional_scalar_output(self, filename):
         self.add_scalar_output(filename)
@@ -242,23 +260,11 @@ class Logger():
             for p in self._scalar_prefix:
                 tag = p + tag
         # maintain pandas DataFrame
-        df_len = len(self._scalar_data[filename])
         if step is None: step = self.default_step
         else: self.default_step = step
-        if step > (df_len - 1):
-            for _ in range(step - df_len + 1):
-                self._scalar_data[filename] = self._scalar_data[filename].append({}, ignore_index= True)
-            if step > 1 and not hasattr(self, "warned_log_scalar"):
-                self.warned_log_scalar = True
-                print(colorize("You might forget to dump_scalar on a regular basis, this might cause the scalar data lost", color= "yellow"))
-        if not tag in self._scalar_data[filename]:
-            self._scalar_data[filename][tag] = np.nan
-        try:
-            self._scalar_data[filename].loc[step][tag] = data
-        except KeyError as e:
-            print(colorize("KeyError: {}".format(e), color= "red"))
-            print(colorize("You might forget to dump_scalar for your scalar file, check demo script please", color= "yellow"))
-            exit(-1)
+        # write to csv file buffer
+        if filename in self._scalar_files:
+            self._scalar_files[filename].buffer[tag] = data
         # tensorboardX API
         if not self.tb_writer is None:
             self.tb_writer.add_scalar(tag, data, step)
@@ -286,86 +292,91 @@ class Logger():
         if not self.tb_writer is None:
             self.tb_writer.add_histogram(tag, data, step)
 
-    def dump_scalar(self, filename= None):
-        """ In order to reflect the scalar data to the file and data loss due to program crash
-        we write current scalar dataframe to csv file
-        """
-        if filename is None: filename = self._scalar_default_file
+    # def dump_scalar(self, filename= None):
+    #     """ In order to reflect the scalar data to the file and data loss due to program crash
+    #     we write current scalar dataframe to csv file
+    #     """
+    #     if filename is None: filename = self._scalar_default_file
         
-        # dump to a different file first, then override the file incase the machine has failure
-        self._scalar_data[filename].to_csv(osp.join(self.log_dir, "._" + filename), index= False)
-        if osp.isfile(osp.join(self.log_dir, filename)):
-            os.remove(osp.join(self.log_dir, filename))
-        os.rename(
-            osp.join(self.log_dir, "._" + filename),
-            osp.join(self.log_dir, filename),
-        )
-        self.log_text("Dumping scalar data for {}".format(filename), len(self._scalar_data[filename]))
-        print(tabulate( self._scalar_data[filename].iloc[self.default_step].items() ))
-        self._scalar_data[filename] = self._scalar_data[filename].append({}, ignore_index= True)
+    #     # dump to a different file first, then override the file incase the machine has failure
+    #     self._scalar_files[filename].to_csv(osp.join(self.log_dir, "._" + filename), index= False)
+    #     if osp.isfile(osp.join(self.log_dir, filename)):
+    #         os.remove(osp.join(self.log_dir, filename))
+    #     os.rename(
+    #         osp.join(self.log_dir, "._" + filename),
+    #         osp.join(self.log_dir, filename),
+    #     )
+    #     self.log_text("Dumping scalar data for {}".format(filename), len(self._scalar_files[filename]))
+    #     print(tabulate( self._scalar_files[filename].iloc[self.default_step].items() ))
+    #     self._scalar_files[filename] = self._scalar_files[filename].append({}, ignore_index= True)
 
-    def __old_dump_scalar(self, filename= None):
+    _TEMP_CSV_FILENAME = "._temp_csv_file.csv"
+    def dump_scalar(self, filename= None):
         """ Due to csv feature, you need to dump scalar to csv file. You can 
         also specify the filename for which file you are dumping to
         """
         if filename is None: filename = self._scalar_default_file
 
-        current_reader = csv.reader(self._scalar_files[filename])
-        # print current data
-        if len(current_reader) == 0:
-            text_step = 0
-        else:
-            text_step = len(current_reader) - 1
-        self.log_text("Dumping scalar data for {}".format(filename), text_step)
-        print(tabulate( self._scalar_current_data[filename].items() ))
-        # check current file keys, and determine whether to rewrite the entire file
-        if len(current_reader) > 0:
+        current_reader = csv.reader(self._scalar_files[filename].fp)
+        try:
             old_keys = next(current_reader)
-            current_keys = list(self._scalar_current_data[filename].keys()) # a copy of keys
+        except StopIteration:
+            old_keys = None
+        finally:
             del current_reader
+        self.log_text("Dumping scalar data for {}".format(filename))
+        print(tabulate( self._scalar_files[filename].buffer.items() ))
+        # check current file keys, and determine whether to rewrite the entire file
+        if old_keys is not None:
+            current_keys = list(self._scalar_files[filename].buffer.keys()) # a copy of keys
             # checking keys
             key_unchanged = len(old_keys) == len(current_keys)
-            for csv_k, data_k in zip(old_keys, current_keys):
-                if csv_k != data_k:
-                    key_unchanged = False; break
+            if key_unchanged:
+                for key in current_keys:
+                    if not key in old_keys:
+                        key_unchanged = False; break
+            for key in old_keys: # for (key in old_keys) and (not key in current_keys)
+                if not key in current_keys:
+                    self._scalar_files[filename].buffer[key] = np.nan
             if key_unchanged:
                 # keep writing
-                current_writer = csv.DictWriter(self._scalar_files[filename], current_keys)
-                current_writer.writerow(self._scalar_current_data[filename])
-                self._scalar_files[filename].flush()
+                current_writer = csv.DictWriter(self._scalar_files[filename].fp, self._scalar_files[filename].buffer.keys())
+                current_writer.writerow(self._scalar_files[filename].buffer)
+                self._scalar_files[filename].fp.flush()
+                del current_writer
             else:
                 # rewrite the entire csv file (hope this never comes)
-                keys_to_add = []
-                for key in old_keys: # if current_keys < old_keys
-                    if not key in current_keys:
-                        self._scalar_current_data[filename][key] = np.nan
                 with open(osp.join(self.log_dir, self._TEMP_CSV_FILENAME), "w") as new_fd:
-                    old_reader = csv.DictReader(self._scalar_files[filename])
-                    new_writer = csv.DictWriter(new_fd, fieldnames= list(self._scalar_current_data[filename].keys()))
+                    old_reader = csv.DictReader(self._scalar_files[filename].fp)
+                    new_writer = csv.DictWriter(new_fd, fieldnames= list(self._scalar_files[filename].buffer.keys()))
                     # rewrite old data
                     for row in old_reader:
                         row = defaultdict(lambda:np.nan, **row) # if current_keys > old_keys
                         new_writer.writerow(row)
                     # write new data
-                    new_writer.writerow(self._scalar_current_data[filename])
+                    new_writer.writerow(self._scalar_files[filename].buffer)
                     new_fd.flush()
+                    del old_reader
+                    del new_writer
                 # replace file descriptor
-                self._scalar_files[filename].close()
+                self._scalar_files[filename].fp.close()
                 os.remove(osp.join(self.log_dir, filename)) # NOTE: currently, `filename` is invalid filename
                 os.rename(
                     osp.join(self.log_dir, self._TEMP_CSV_FILENAME),
                     osp.join(self.log_dir, filename),
                 )
-                self._scalar_files[filename] = open(osp.join(self.log_dir, filename))
+                self._scalar_files[filename] = self._scalar_files[filename]._make(
+                    fp= open(osp.join(self.log_dir, filename), "a+"),
+                    buffer= OrderedDict(),
+                )
         else:
             # new file, write directly
-            del current_reader
-            file_writer = csv.DictWriter(self._scalar_files[filename], fieldnames= list(self._scalar_files[filename].keys()))
+            file_writer = csv.DictWriter(self._scalar_files[filename].fp, fieldnames= list(self._scalar_files[filename].buffer.keys()))
             file_writer.writeheader()
-            file_writer.writerow(self._scalar_current_data[filename])
+            file_writer.writerow(self._scalar_files[filename].buffer)
         # clear out current data (buffer)
-        for k in self._scalar_current_data[filename].keys():
-            self._scalar_current_data[filename][k] = np.nan
+        for k in self._scalar_files[filename].buffer.keys():
+            self._scalar_files[filename].buffer[k] = np.nan
     
     def log_image(self, tag, data, step= None, with_prefix= True, **kwargs):
         """ NOTE: data must be (H, W) or (3, H, W) or (4, H, W) from 0-255 uint8
@@ -418,7 +429,7 @@ class Logger():
         except:
             print(colorize("Exceptions when closing text logger", color= "yellow"))
         try:
-            for f, d in self._scalar_data.items():
+            for f, d in self._scalar_files.items():
                 d.to_csv(osp.join(self.log_dir, f), index= False)
         except:
             print(colorize("Exceptions when closing scalar logger", color= "yellow"))
